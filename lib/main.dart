@@ -27,7 +27,7 @@ void main() async {
   );
 
   // 初始化推播通知服務
-  await PushNotificationService().init();
+  // await PushNotificationService().init();
 
   runApp(const PrmsApp());
 }

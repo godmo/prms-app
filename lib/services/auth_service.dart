@@ -9,11 +9,10 @@ class AuthService {
   Future<void> init() async {
     if (_isInitialized) return;
     _msalAuth = await SingleAccountPca.create(
-      clientId: 'c070e728-8071-473f-b2fc-b12c64e98aaf',
+      clientId: '588bddd4-a2de-4350-9a17-45867f3c90e3',
       androidConfig: AndroidConfig(
         configFilePath: 'assets/msal_config.json',
-        redirectUri:
-            'msauth://vis.com.tw.viscanner/W1bDWbtFBq5Jz7SwQBUrKqPa%2BGU%3D',
+        redirectUri: 'msauth.vis.com.tw.prmsapp://auth',
       ),
       appleConfig: AppleConfig(
         authority:
