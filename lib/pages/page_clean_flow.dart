@@ -1,7 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/io_client.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:prmsapp/utility/prms_data_check.dart';
 import 'package:prmsapp/widgets/global_nav_bar.dart';
@@ -107,7 +110,6 @@ class _PageCleanFlowState extends State<PageCleanFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceSize = MediaQuery.of(context).size;
     final screenWidth = MediaQuery.of(context).size.width;
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemBackground,
@@ -533,51 +535,122 @@ class _PageCleanFlowState extends State<PageCleanFlow> {
                                       ),
                                   onTap: () async {
                                     setState(() => _isButtonPressed = false);
-                                    await showCupertinoDialog(
-                                      context: context,
-                                      builder:
-                                          (context) => CupertinoAlertDialog(
-                                            title: Row(
-                                              children: [
-                                                Icon(
-                                                  CupertinoIcons
-                                                      .check_mark_circled_solid,
-                                                  color:
-                                                      CupertinoColors
-                                                          .activeGreen,
-                                                  size: 28,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text('Clean Flow'),
-                                              ],
-                                            ),
-                                            content: Text(
-                                              'Your info has been submitted successfully.',
-                                            ),
-                                            actions: [
-                                              CupertinoDialogAction(
-                                                child: Text('Close'),
-                                                onPressed: () {
-                                                  Navigator.of(
-                                                    context,
-                                                  ).pop(); // 先关闭弹窗
-                                                  Navigator.of(
-                                                    context,
-                                                  ).pushAndRemoveUntil(
-                                                    CupertinoPageRoute(
-                                                      builder:
-                                                          (context) => MainPage(
-                                                            title: 'PRMS APP',
-                                                            initialTabIndex: 0,
-                                                          ),
-                                                    ),
-                                                    (route) => false,
-                                                  );
-                                                },
-                                              ),
-                                            ],
-                                          ),
+
+                                    // 创建忽略SSL证书的HttpClient（仅用于开发环境）
+                                    final httpClient =
+                                        HttpClient()
+                                          ..badCertificateCallback =
+                                              (
+                                                X509Certificate cert,
+                                                String host,
+                                                int port,
+                                              ) => true;
+                                    final ioClient = IOClient(httpClient);
+
+                                    final url = Uri.parse(
+                                      'https://10.125.1.104:3002/api/proxy/post',
                                     );
+                                    final postBody = {
+                                      "url":
+                                          "http://10.29.11.237:5098/CleanFlowRouter/submit",
+                                      "body": {
+                                        "user_id": p_user_id,
+                                        "machine_id": p_machine_id,
+                                      },
+                                    };
+                                    try {
+                                      final response = await ioClient.post(
+                                        url,
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                        },
+                                        body: jsonEncode(postBody),
+                                      );
+                                      if (response.statusCode == 200) {
+                                        // response.body 的内容如下
+                                        // "{"status":"success","message":"SUCCESS"}"
+                                        // 解析响应内容
+                                        // 当status == "success" 时，表示提交成功
+                                        try {
+                                          final responseData = jsonDecode(
+                                            response.body,
+                                          );
+                                          if (responseData['status'] ==
+                                              'success') {
+                                            await showCupertinoDialog(
+                                              context: context,
+                                              builder:
+                                                  (
+                                                    context,
+                                                  ) => CupertinoAlertDialog(
+                                                    title: Row(
+                                                      children: [
+                                                        Icon(
+                                                          CupertinoIcons
+                                                              .check_mark_circled_solid,
+                                                          color:
+                                                              CupertinoColors
+                                                                  .activeGreen,
+                                                          size: 28,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Text('Clean Flow'),
+                                                      ],
+                                                    ),
+                                                    content: Text(
+                                                      'Your info has been submitted successfully.',
+                                                    ),
+                                                    actions: [
+                                                      CupertinoDialogAction(
+                                                        child: Text('Close'),
+                                                        onPressed: () {
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(); // 先关闭弹窗
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pushAndRemoveUntil(
+                                                            CupertinoPageRoute(
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                  ) => MainPage(
+                                                                    title:
+                                                                        'PRMS APP',
+                                                                    initialTabIndex:
+                                                                        0,
+                                                                  ),
+                                                            ),
+                                                            (route) => false,
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                            );
+                                          } else {
+                                            // 如果status不是success，显示错误信息
+                                            debugPrint(
+                                              '提交失败: ${responseData['message'] ?? 'Unknown error'}',
+                                            );
+                                          }
+                                        } catch (parseError) {
+                                          debugPrint(
+                                            '响应解析失败: ${parseError.toString()}',
+                                          );
+                                        }
+                                        debugPrint('提交成功: ${response.body}');
+                                      } else {
+                                        // 失败处理
+                                        debugPrint(
+                                          '提交失败: 状态码 ${response.statusCode}',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint('请求异常: ${e.toString()}');
+                                    } finally {
+                                      ioClient.close(); // 记得关闭客户端
+                                    }
                                   },
                                   onDoubleTap: () async {
                                     setState(() => _isButtonPressed = false);

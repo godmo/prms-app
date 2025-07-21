@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart'; // 引入services套件以設定系統UI樣式
 import 'package:prmsapp/services/messaging_service.dart';
 import 'package:prmsapp/pages/main_page.dart';
+import 'package:prmsapp/pages/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:prmsapp/providers/auth_provider.dart';
@@ -41,15 +42,39 @@ class PrmsApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => AuthProvider(),
       child: CupertinoApp(
-        // 改用 CupertinoApp
         debugShowCheckedModeBanner: false,
-        theme: const CupertinoThemeData(
-          // 設定亮色主題
-          brightness: Brightness.light,
-          //primaryColor: CupertinoColors.systemBlue,
-        ),
-        home: MainPage(title: 'PRMS APP main'), // 直接使用 MainPage 作為首頁
+        theme: const CupertinoThemeData(brightness: Brightness.light),
+        home: const SplashToMain(),
       ),
     );
+  }
+}
+
+/// 控制 SplashScreen 和 MainPage 的切换
+class SplashToMain extends StatefulWidget {
+  const SplashToMain({super.key});
+
+  @override
+  State<SplashToMain> createState() => _SplashToMainState();
+}
+
+class _SplashToMainState extends State<SplashToMain> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        _showSplash = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _showSplash
+        ? const SplashScreen()
+        : MainPage(title: 'PRMS APP main');
   }
 }
