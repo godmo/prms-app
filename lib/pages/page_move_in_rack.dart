@@ -1,13 +1,17 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:prmsapp/utility/prms_data_check.dart';
 import 'package:prmsapp/widgets/global_nav_bar.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'main_page.dart';
 import 'package:flutter/material.dart';
+import 'package:prmsapp/config/api_config.dart';
 
 class PageMoveInRack extends StatefulWidget {
   final GlobalKey<GlobalNavBarState>? navBarKey;
@@ -39,7 +43,7 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
   String p_rack_id = "";
 
   bool _isButtonPressed = false;
-
+  bool _isSubmitting = false; // 新增提交状态变量
   @override
   void initState() {
     super.initState();
@@ -110,7 +114,7 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
         } else if (page_stage == "Rack") {
           // 当符合 Old PR ID 的格式时，才会更新 p_old_pr_id
           // PR開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isVaildRackId(scanContent)) {
+          if (PrmsDataCheck.isValidRackId(scanContent)) {
             setState(() {
               p_rack_id = scanContent;
               page_stage = "Complete";
@@ -509,145 +513,228 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
                                               () => setState(
                                                 () => _isButtonPressed = false,
                                               ),
-                                          onTap: () async {
-                                            setState(
-                                              () => _isButtonPressed = false,
-                                            );
-                                            await showCupertinoDialog(
-                                              context: context,
-                                              builder:
-                                                  (
-                                                    context,
-                                                  ) => CupertinoAlertDialog(
-                                                    title: Row(
-                                                      children: [
-                                                        Icon(
-                                                          CupertinoIcons
-                                                              .check_mark_circled_solid,
-                                                          color:
-                                                              CupertinoColors
-                                                                  .activeGreen,
-                                                          size: 28,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Text('Move In Rack'),
-                                                      ],
-                                                    ),
-                                                    content: Text(
-                                                      'Your info has been submitted successfully.',
-                                                    ),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        child: Text('Close'),
-                                                        onPressed: () {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(); // 先关闭弹窗
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pushAndRemoveUntil(
-                                                            CupertinoPageRoute(
+                                          onTap:
+                                              _isSubmitting
+                                                  ? null
+                                                  : () async {
+                                                    setState(() {
+                                                      _isButtonPressed = false;
+                                                      _isSubmitting =
+                                                          true; // 开始提交
+                                                    });
+
+                                                    // 创建 Dio 实例并配置（仅用于开发环境）
+                                                    final dio = Dio();
+
+                                                    // 配置忽略SSL证书验证（仅用于开发环境）
+                                                    (dio.httpClientAdapter
+                                                            as DefaultHttpClientAdapter)
+                                                        .onHttpClientCreate = (
+                                                      client,
+                                                    ) {
+                                                      client.badCertificateCallback =
+                                                          (
+                                                            X509Certificate
+                                                            cert,
+                                                            String host,
+                                                            int port,
+                                                          ) => true;
+                                                      return client;
+                                                    };
+
+                                                    final url =
+                                                        ApiConfig.proxyPostUrl;
+                                                    final postBody = {
+                                                      "url":
+                                                          ApiConfig
+                                                              .moveInSubmitUrl,
+                                                      "body": {
+                                                        "user_id": p_user_id,
+                                                        "rack_id": p_rack_id,
+                                                        "arr_pr":
+                                                            p_pr
+                                                                .map(
+                                                                  (pr) => {
+                                                                    "pr_id": pr,
+                                                                  },
+                                                                )
+                                                                .toList(), // 将 p_pr 转换为正确的数组格式
+                                                      },
+                                                    };
+
+                                                    try {
+                                                      final response = await dio
+                                                          .post(
+                                                            url,
+                                                            data: postBody,
+                                                            options:
+                                                                ApiConfig
+                                                                    .defaultHttpOptions,
+                                                          );
+
+                                                      if (response.statusCode ==
+                                                          200) {
+                                                        try {
+                                                          final responseData =
+                                                              response.data;
+                                                          if (responseData['status'] ==
+                                                              'success') {
+                                                            await showCupertinoDialog(
+                                                              context: context,
                                                               builder:
                                                                   (
                                                                     context,
-                                                                  ) => MainPage(
-                                                                    title:
-                                                                        'PRMS APP',
-                                                                    initialTabIndex:
-                                                                        0,
-                                                                  ),
-                                                            ),
-                                                            (route) => false,
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                            );
-                                          },
-                                          onDoubleTap: () async {
-                                            setState(
-                                              () => _isButtonPressed = false,
-                                            );
-                                            // 假设你有一个异常信息列表
-                                            List<String> errorMessages = [
-                                              '1：Network error',
-                                              '2：PR ID mismatch',
-                                              '3：Rack ID missmatch',
-                                              // 可以根据实际情况动态生成
-                                            ];
-                                            await showCupertinoDialog(
-                                              context: context,
-                                              builder:
-                                                  (
-                                                    context,
-                                                  ) => CupertinoAlertDialog(
-                                                    title: Row(
-                                                      children: [
-                                                        Icon(
-                                                          CupertinoIcons
-                                                              .exclamationmark_circle_fill,
-                                                          color:
-                                                              CupertinoColors
-                                                                  .systemRed,
-                                                          size: 26,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Text('Error'),
-                                                      ],
-                                                    ),
-                                                    content: ConstrainedBox(
-                                                      constraints:
-                                                          BoxConstraints(
-                                                            maxHeight:
-                                                                MediaQuery.of(
-                                                                  context,
-                                                                ).size.height *
-                                                                0.4,
-                                                          ),
-                                                      child: SingleChildScrollView(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children:
-                                                              errorMessages
-                                                                  .map(
-                                                                    (
-                                                                      msg,
-                                                                    ) => Padding(
-                                                                      padding: const EdgeInsets.only(
-                                                                        bottom:
-                                                                            2.0,
-                                                                      ),
-                                                                      child: Text(
-                                                                        msg,
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              15,
+                                                                  ) => CupertinoAlertDialog(
+                                                                    title: Row(
+                                                                      children: [
+                                                                        Icon(
+                                                                          CupertinoIcons
+                                                                              .check_mark_circled_solid,
+                                                                          color:
+                                                                              CupertinoColors.activeGreen,
+                                                                          size:
+                                                                              28,
                                                                         ),
-                                                                      ),
+                                                                        SizedBox(
+                                                                          width:
+                                                                              8,
+                                                                        ),
+                                                                        Text(
+                                                                          'Move In Rack Success',
+                                                                        ),
+                                                                      ],
                                                                     ),
-                                                                  )
-                                                                  .toList(),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        child: Text('Close'),
-                                                        onPressed: () {
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(); // 先关闭弹窗
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                            );
-                                          },
+                                                                    content: Text(
+                                                                      'Your info has been submitted successfully.',
+                                                                    ),
+                                                                    actions: [
+                                                                      CupertinoDialogAction(
+                                                                        child: Text(
+                                                                          'Close',
+                                                                        ),
+                                                                        onPressed: () {
+                                                                          Navigator.of(
+                                                                            context,
+                                                                          ).pop(); // 先关闭弹窗
+                                                                          Navigator.of(
+                                                                            context,
+                                                                          ).pushAndRemoveUntil(
+                                                                            CupertinoPageRoute(
+                                                                              builder:
+                                                                                  (
+                                                                                    context,
+                                                                                  ) => MainPage(
+                                                                                    title:
+                                                                                        'PRMS APP',
+                                                                                    initialTabIndex:
+                                                                                        0,
+                                                                                  ),
+                                                                            ),
+                                                                            (
+                                                                              route,
+                                                                            ) =>
+                                                                                false,
+                                                                          );
+                                                                        },
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                            );
+                                                          } else if (responseData['status'] ==
+                                                              'fail') {
+                                                            await showCupertinoDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                  ) => CupertinoAlertDialog(
+                                                                    title: Row(
+                                                                      children: [
+                                                                        Icon(
+                                                                          CupertinoIcons
+                                                                              .exclamationmark_triangle_fill,
+                                                                          color:
+                                                                              CupertinoColors.systemRed,
+                                                                          size:
+                                                                              28,
+                                                                        ),
+                                                                        SizedBox(
+                                                                          width:
+                                                                              8,
+                                                                        ),
+                                                                        Text(
+                                                                          'Move In Rack Fail',
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    content: Text(
+                                                                      responseData['message'],
+                                                                    ),
+                                                                    actions: [
+                                                                      CupertinoDialogAction(
+                                                                        child: Text(
+                                                                          'Close',
+                                                                        ),
+                                                                        onPressed: () {
+                                                                          Navigator.of(
+                                                                            context,
+                                                                          ).pop(); // 先关闭弹窗
+                                                                        },
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                            );
+                                                          } else {
+                                                            // 如果status不是success，显示错误信息
+                                                            debugPrint(
+                                                              '提交失败: ${responseData['message'] ?? 'Unknown error'}',
+                                                            );
+                                                          }
+                                                        } catch (parseError) {
+                                                          debugPrint(
+                                                            '响应解析失败: ${parseError.toString()}',
+                                                          );
+                                                        }
+                                                        debugPrint(
+                                                          '提交成功: ${response.data}',
+                                                        );
+                                                      } else {
+                                                        // 失败处理
+                                                        debugPrint(
+                                                          '提交失败: 状态码 ${response.statusCode}',
+                                                        );
+                                                      }
+                                                    } catch (e) {
+                                                      if (e is DioException) {
+                                                        debugPrint(
+                                                          'Dio请求异常: ${e.message}',
+                                                        );
+                                                        debugPrint(
+                                                          '错误类型: ${e.type}',
+                                                        );
+                                                        if (e.response !=
+                                                            null) {
+                                                          debugPrint(
+                                                            '响应状态码: ${e.response?.statusCode}',
+                                                          );
+                                                          debugPrint(
+                                                            '响应数据: ${e.response?.data}',
+                                                          );
+                                                        }
+                                                      } else {
+                                                        debugPrint(
+                                                          '请求异常: ${e.toString()}',
+                                                        );
+                                                      }
+                                                    } finally {
+                                                      // 无论成功还是失败，都重置提交状态
+                                                      if (mounted) {
+                                                        setState(() {
+                                                          _isSubmitting = false;
+                                                        });
+                                                      }
+                                                    }
+                                                  },
                                           child: AnimatedScale(
                                             scale:
                                                 _isButtonPressed == true
@@ -662,7 +749,11 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
                                               ),
                                               decoration: BoxDecoration(
                                                 color:
-                                                    CupertinoColors.activeBlue,
+                                                    _isSubmitting
+                                                        ? CupertinoColors
+                                                            .systemGrey3
+                                                        : CupertinoColors
+                                                            .activeBlue,
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                                 boxShadow: [
@@ -679,16 +770,24 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
                                                 children: [
-                                                  Icon(
-                                                    CupertinoIcons
-                                                        .paperplane_fill,
-                                                    color:
-                                                        CupertinoColors.white,
-                                                    size: 32,
-                                                  ),
+                                                  if (_isSubmitting)
+                                                    CupertinoActivityIndicator(
+                                                      color:
+                                                          CupertinoColors.white,
+                                                    )
+                                                  else
+                                                    Icon(
+                                                      CupertinoIcons
+                                                          .paperplane_fill,
+                                                      color:
+                                                          CupertinoColors.white,
+                                                      size: 32,
+                                                    ),
                                                   SizedBox(width: 4),
                                                   Text(
-                                                    'Confrim & Submit',
+                                                    _isSubmitting
+                                                        ? 'Submitting...'
+                                                        : 'Submit',
                                                     style: TextStyle(
                                                       fontSize: 18,
                                                       fontWeight:

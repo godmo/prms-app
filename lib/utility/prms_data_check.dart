@@ -15,9 +15,9 @@ class PrmsDataCheck {
     return reg.hasMatch(input);
   }
 
-  /// 檢查PR ID（範例：PR開頭+6位數字，可依實際需求調整）
+  /// 檢查PR ID（範例：L開頭+6位數字+連字號+12位數字）
   static bool isValidPrId(String input) {
-    final reg = RegExp(r'^PR\d{6}$');
+    final reg = RegExp(r'^L\d{6}-\d{12}$');
     return reg.hasMatch(input);
   }
 
@@ -33,9 +33,10 @@ class PrmsDataCheck {
     return reg.hasMatch(input);
   }
 
-  static bool isVaildRackId(String input) {
-    // 假設Rack ID格式為R開頭+3位數字
-    final reg = RegExp(r'^R\d{3}$');
+  static bool isValidRackId(String input) {
+    // Rack ID格式：數字字母-MFG-P+數字-字母數字
+    final reg = RegExp(r'^[0-9A-Z]+-MFG-P\d+-[A-Z0-9]+$');
+    // 2B-MFG-P005-A2
     return reg.hasMatch(input);
     //return true;
   }

@@ -110,7 +110,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
         } else if (page_stage == "Rack") {
           // 当符合 Old PR ID 的格式时，才会更新 p_old_pr_id
           // PR開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isVaildRackId(scanContent)) {
+          if (PrmsDataCheck.isValidRackId(scanContent)) {
             setState(() {
               p_rack_id = scanContent;
               page_stage = "Complete";
