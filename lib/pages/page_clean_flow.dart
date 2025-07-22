@@ -643,6 +643,49 @@ class _PageCleanFlowState extends State<PageCleanFlow> {
                                                             ],
                                                           ),
                                                     );
+                                                  } else if (responseData['status'] ==
+                                                      'fail') {
+                                                    await showCupertinoDialog(
+                                                      context: context,
+                                                      builder:
+                                                          (
+                                                            context,
+                                                          ) => CupertinoAlertDialog(
+                                                            title: Row(
+                                                              children: [
+                                                                Icon(
+                                                                  CupertinoIcons
+                                                                      .exclamationmark_triangle_fill,
+                                                                  color:
+                                                                      CupertinoColors
+                                                                          .systemRed,
+                                                                  size: 28,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 8,
+                                                                ),
+                                                                Text(
+                                                                  'Clean Flow Fail',
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            content: Text(
+                                                              responseData['message'],
+                                                            ),
+                                                            actions: [
+                                                              CupertinoDialogAction(
+                                                                child: Text(
+                                                                  'Close',
+                                                                ),
+                                                                onPressed: () {
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(); // 先关闭弹窗
+                                                                },
+                                                              ),
+                                                            ],
+                                                          ),
+                                                    );
                                                   } else {
                                                     // 如果status不是success，显示错误信息
                                                     debugPrint(
