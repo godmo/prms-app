@@ -6,11 +6,7 @@ class KeyboardWizardCard extends StatefulWidget {
   final void Function(String)? onTextChanged;
   final String? initialText;
 
-  const KeyboardWizardCard({
-    super.key,
-    this.onTextChanged,
-    this.initialText,
-  });
+  const KeyboardWizardCard({super.key, this.onTextChanged, this.initialText});
 
   @override
   State<KeyboardWizardCard> createState() => _KeyboardWizardCardState();

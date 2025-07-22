@@ -708,18 +708,45 @@ class _PageCleanFlowState extends State<PageCleanFlow> {
                                               }
                                             } catch (e) {
                                               if (e is DioException) {
-                                                debugPrint(
-                                                  'Dio请求异常: ${e.message}',
+                                                await showCupertinoDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (
+                                                        context,
+                                                      ) => CupertinoAlertDialog(
+                                                        title: Row(
+                                                          children: [
+                                                            Icon(
+                                                              CupertinoIcons
+                                                                  .exclamationmark_triangle_fill,
+                                                              color:
+                                                                  CupertinoColors
+                                                                      .systemRed,
+                                                              size: 28,
+                                                            ),
+                                                            SizedBox(width: 8),
+                                                            Text(
+                                                              'Data submission failed',
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        content: Text(
+                                                          'Please check your network connection or try again later.',
+                                                        ),
+                                                        actions: [
+                                                          CupertinoDialogAction(
+                                                            child: Text(
+                                                              'Close',
+                                                            ),
+                                                            onPressed: () {
+                                                              Navigator.of(
+                                                                context,
+                                                              ).pop(); // 先关闭弹窗
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
                                                 );
-                                                debugPrint('错误类型: ${e.type}');
-                                                if (e.response != null) {
-                                                  debugPrint(
-                                                    '响应状态码: ${e.response?.statusCode}',
-                                                  );
-                                                  debugPrint(
-                                                    '响应数据: ${e.response?.data}',
-                                                  );
-                                                }
                                               } else {
                                                 debugPrint(
                                                   '请求异常: ${e.toString()}',

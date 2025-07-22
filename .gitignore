@@ -23,7 +23,7 @@ ios/Podfile.lock
 ios/.symlinks/
 
 # IDE 設定（VS Code & Android Studio）
-.vscode/
+
 .idea/
 *.iml
 

@@ -76,9 +76,10 @@ class ScanHistoryManager extends ChangeNotifier {
       final String? historyJson = prefs.getString(_storageKey);
       if (historyJson != null) {
         final List<dynamic> decoded = jsonDecode(historyJson);
-        _scanHistory = decoded
-            .map((item) => ScanHistoryItem.fromJson(item))
-            .toList(); // 移除了 .reversed.toList()，因為 addScanRecord 已經將新項目放在最前面
+        _scanHistory =
+            decoded
+                .map((item) => ScanHistoryItem.fromJson(item))
+                .toList(); // 移除了 .reversed.toList()，因為 addScanRecord 已經將新項目放在最前面
         notifyListeners();
       }
     } catch (e) {
@@ -114,8 +115,9 @@ class ScanHistoryManager extends ChangeNotifier {
   /// 如果已存在相同內容的記錄，只會更新時間戳記
   Future<void> addScanRecord(String content, String type) async {
     // 檢查是否已存在相同內容的記錄
-    final existingIndex =
-        _scanHistory.indexWhere((item) => item.content == content);
+    final existingIndex = _scanHistory.indexWhere(
+      (item) => item.content == content,
+    );
 
     if (existingIndex >= 0) {
       // 如果存在相同內容的記錄，刪除舊記錄
