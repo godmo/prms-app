@@ -3,7 +3,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:prmsapp/pages/page_clean_flow.dart';
 import 'package:prmsapp/pages/page_cumsume.dart';
 import 'package:prmsapp/pages/page_move_in_rack.dart';
@@ -11,6 +10,7 @@ import 'package:prmsapp/pages/page_move_out_rack.dart';
 import 'package:prmsapp/pages/page_put_on_flow.dart';
 import 'package:prmsapp/pages/page_take_off_flow.dart';
 import 'package:prmsapp/services/prms_api.dart';
+import 'package:prmsapp/services/wifi_service.dart';
 
 class BindingPrmsCard extends StatefulWidget {
   const BindingPrmsCard({super.key});
@@ -224,40 +224,13 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
 
   void _showWifiSSID(BuildContext context) async {
     try {
-      // 检查当前位置权限
-      var locationStatus = await Permission.location.status;
-
-      // 如果权限未授予，先显示说明对话框
-      if (!locationStatus.isGranted) {
-        bool shouldRequest = await _showPermissionExplanationDialog(context);
-        if (!shouldRequest) return;
-
-        // 请求权限
-        locationStatus = await Permission.location.request();
-
-        // 处理不同的权限状态
-        if (locationStatus.isDenied) {
-          if (context.mounted) {
-            _showPermissionDeniedDialog(context, false);
-          }
-          return;
-        } else if (locationStatus.isPermanentlyDenied) {
-          if (context.mounted) {
-            _showPermissionDeniedDialog(context, true);
-          }
-          return;
-        }
-      }
-
       // 显示加载指示器
       if (context.mounted) {
         _showLoadingDialog(context);
       }
 
-      final info = NetworkInfo();
-      final wifiName = await info.getWifiName(); // WiFi SSID
-      final wifiBSSID = await info.getWifiBSSID(); // WiFi BSSID
-      final wifiIP = await info.getWifiIP(); // WiFi IP
+      // 使用原生iOS方法获取WiFi信息
+      final wifiResult = await WifiService.getWifiSSIDNative();
 
       // 关闭加载对话框
       if (context.mounted) {
@@ -265,18 +238,47 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
       }
 
       String displayText = '';
-      if (wifiName != null && wifiName.isNotEmpty) {
-        // 移除引号（如果有的话）
-        String cleanWifiName = wifiName.replaceAll('"', '');
-        displayText = 'WiFi SSID: $cleanWifiName';
-        if (wifiBSSID != null && wifiBSSID.isNotEmpty) {
-          displayText += '\nBSSID: $wifiBSSID';
-        }
-        if (wifiIP != null && wifiIP.isNotEmpty) {
-          displayText += '\nIP Address: $wifiIP';
+
+      if (wifiResult['success'] == true) {
+        final ssid = wifiResult['ssid'] as String? ?? '';
+        final bssid = wifiResult['bssid'] as String? ?? '';
+
+        if (ssid.isNotEmpty) {
+          // 移除引号（如果有的话）
+          String cleanWifiName = ssid.replaceAll('"', '');
+          displayText = 'WiFi SSID: $cleanWifiName';
+          if (bssid.isNotEmpty) {
+            displayText += '\nBSSID: $bssid';
+          }
+
+          // 如果可能，尝试获取IP地址（使用原来的方法作为补充）
+          try {
+            final info = NetworkInfo();
+            final wifiIP = await info.getWifiIP();
+            if (wifiIP != null && wifiIP.isNotEmpty) {
+              displayText += '\nIP Address: $wifiIP';
+            }
+          } catch (e) {
+            // IP获取失败不影响主要功能
+            print('Failed to get IP: $e');
+          }
+        } else {
+          displayText = 'No WiFi connection detected or WiFi information not available.\n\nNote: On iOS simulators, WiFi information is always unavailable.';
         }
       } else {
-        displayText = 'No WiFi connection detected or WiFi information not available.\n\nNote: On iOS simulators, WiFi information is always unavailable.';
+        // 处理错误情况
+        final errorCode = wifiResult['code'] as String?;
+        final errorMessage = wifiResult['error'] as String? ?? 'Unknown error';
+
+        if (errorCode == 'PERMISSION_DENIED') {
+          displayText =
+              'Location permission is required to get WiFi information.\n\nPlease grant location permission in Settings:\nSettings > Privacy & Security > Location Services > PRMS App';
+        } else if (errorCode == 'NO_INTERFACES') {
+          displayText = 'No network interfaces found.\n\nPlease ensure your device is connected to WiFi and try again.';
+        } else {
+          displayText =
+              'Failed to get WiFi information: $errorMessage\n\nPlease ensure:\n• Location services are enabled\n• App has location permission\n• Device is connected to WiFi\n• Local network access is granted (iOS 14+)';
+        }
       }
 
       if (context.mounted) {
@@ -380,77 +382,6 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                 Navigator.of(context).pop();
               },
             ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 显示权限说明对话框
-  Future<bool> _showPermissionExplanationDialog(BuildContext context) async {
-    bool? result = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('需要位置权限', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          content: const Padding(
-            padding: EdgeInsets.only(top: 16),
-            child: Text('為了獲取WiFi網路資訊，此應用程式需要位置權限。\n\n這是iOS系統的安全要求，我們不會收集您的位置資料。', style: TextStyle(fontSize: 14), textAlign: TextAlign.left),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('取消', style: TextStyle(color: CupertinoColors.systemGrey)),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            CupertinoDialogAction(
-              child: const Text('允許權限', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    return result ?? false;
-  }
-
-  // 显示权限被拒绝对话框
-  void _showPermissionDeniedDialog(BuildContext context, bool isPermanentlyDenied) {
-    String title = isPermanentlyDenied ? '權限被永久拒絕' : '權限被拒絕';
-    String content = isPermanentlyDenied ? '位置權限已被永久拒絕。請到設定中手動開啟位置權限：\n\n設定 > 隱私權與安全性 > 定位服務 > PRMS App' : '無法獲取位置權限，因此無法取得WiFi資訊。\n\n您可以稍後重試或到設定中手動開啟權限。';
-
-    showCupertinoDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          content: Padding(padding: const EdgeInsets.only(top: 16), child: Text(content, style: const TextStyle(fontSize: 14), textAlign: TextAlign.left)),
-          actions: [
-            if (isPermanentlyDenied) ...[
-              CupertinoDialogAction(
-                child: const Text('取消', style: TextStyle(color: CupertinoColors.systemGrey)),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              CupertinoDialogAction(
-                child: const Text('開啟設定', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  openAppSettings();
-                },
-              ),
-            ] else ...[
-              CupertinoDialogAction(
-                child: const Text('確定', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
           ],
         );
       },

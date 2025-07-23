@@ -32,6 +32,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>此應用程式需要使用相機來掃描條碼。</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>此應用程式需要本地網路權限來獲取WiFi網路資訊。</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>此應用程式需要位置權限來獲取WiFi網路資訊。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
