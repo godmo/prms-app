@@ -531,13 +531,14 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                                       }
                                                     }
                                                   },
+                                          // AnimatedScale 用于点击时按钮缩放动画，提升交互体验
                                           child: AnimatedScale(
-                                            scale: _isButtonPressed == true ? 0.96 : 1.0,
-                                            duration: Duration(milliseconds: 80),
+                                            scale: _isButtonPressed == true ? 0.96 : 1.0, // 按下时缩小，松开恢复
+                                            duration: Duration(milliseconds: 80), // 动画时长
                                             child: Container(
                                               padding: EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: _isSubmitting ? CupertinoColors.systemGrey3 : CupertinoColors.activeBlue,
+                                                color: _isSubmitting ? CupertinoColors.systemGrey3 : CupertinoColors.activeBlue, // 提交时变灰
                                                 borderRadius: BorderRadius.circular(10),
                                                 boxShadow: [
                                                   BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 8, offset: Offset(0, 2)),
@@ -546,11 +547,13 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
+                                                  // 提交时显示加载动画，否则显示纸飞机图标
                                                   if (_isSubmitting)
                                                     CupertinoActivityIndicator(color: CupertinoColors.white)
                                                   else
                                                     Icon(CupertinoIcons.paperplane_fill, color: CupertinoColors.white, size: 32),
                                                   SizedBox(width: 4),
+                                                  // 按钮文字，提交时显示Submitting...
                                                   Text(
                                                     _isSubmitting ? 'Submitting...' : 'Submit',
                                                     style: TextStyle(

@@ -21,15 +21,15 @@ class PrmsDataCheck {
     return reg.hasMatch(input);
   }
 
-  /// 檢查Tube ID（範例：TUBE開頭+6位數字，可依實際需求調整）
+  /// 檢查Tube ID（範例：L207350.2，L開頭+6位數字+小數點+1位數字）
   static bool isValidTubeId(String input) {
-    final reg = RegExp(r'^TUBE\d{6}$');
+    final reg = RegExp(r'^L\d{6}\.\d$');
     return reg.hasMatch(input);
   }
 
-  /// 檢查Tube ID（範例：TUBE開頭+6位數字，可依實際需求調整）
+  /// 檢查Nozzle ID（範例：1_2，數字+底線+數字）
   static bool isValidNozzleId(String input) {
-    final reg = RegExp(r'^Z\d{6}$');
+    final reg = RegExp(r'^\d+_\d+$');
     return reg.hasMatch(input);
   }
 

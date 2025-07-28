@@ -1,18 +1,23 @@
+// 忽略已弃用成员使用警告
 // ignore_for_file: deprecated_member_use
+
+// Dart/Flutter 相关依赖
 import 'dart:io';
 
-import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:prmsapp/config/api_config.dart';
-import 'package:prmsapp/utility/prms_data_check.dart';
-import 'package:prmsapp/widgets/global_nav_bar.dart';
-import 'package:visibility_detector/visibility_detector.dart';
+import 'package:dio/dio.dart'; // 网络请求库
+import 'package:dio/io.dart'; // 用于配置Dio的HttpClient
+import 'package:flutter/cupertino.dart'; // iOS风格UI
+import 'package:flutter/material.dart'; // Material风格UI
+import 'package:mobile_scanner/mobile_scanner.dart'; // 条码扫描
+import 'package:prmsapp/config/api_config.dart'; // API配置
+import 'package:prmsapp/utility/prms_data_check.dart'; // 数据校验工具
+import 'package:prmsapp/widgets/global_nav_bar.dart'; // 全局导航栏
+import 'package:visibility_detector/visibility_detector.dart'; // 可见性检测
 
-import 'main_page.dart';
+import 'main_page.dart'; // 主页面
 
+/// 光阻液上机流程页面
+/// 包含扫码、阶段切换、表单提交等完整业务逻辑
 class PagePutOnFlow extends StatefulWidget {
   final GlobalKey<GlobalNavBarState>? navBarKey;
   const PagePutOnFlow({super.key, this.navBarKey});
@@ -21,29 +26,31 @@ class PagePutOnFlow extends StatefulWidget {
   State<PagePutOnFlow> createState() => _PagePutOnFlowState();
 }
 
+/// 上机流程页面的状态类
 class _PagePutOnFlowState extends State<PagePutOnFlow> {
-  /// 控制相機掃描功能的控制器
+  /// 控制相机扫码的控制器
   final MobileScannerController _scannerController = MobileScannerController(
     autoStart: false,
     detectionSpeed: DetectionSpeed.noDuplicates,
-    // 使用1080p解析度，以16:9比例顯示相機畫面，iphone上不需設定改為null
+    // 使用1080p分辨率，iPhone可设为null
     cameraResolution: null,
-    // 不指定formats參數，讓掃描器支援所有類型的條碼
+    // 支持所有条码类型
   );
 
-  // 分别为5个阶段的处理作业
-  // User , Machine , New_PR, New_Tube
-  String page_stage = "User"; // User , Machine , New_PR , New_Tube , Nozzle , Complete
-  //String p_user_id = "220653 / HHCHENX"; // 220653
-  String p_user_id = ""; // 220653
+  // 阶段状态变量
+  // User: 用户扫码，Machine: 机台扫码，New_PR: 新PR扫码，New_Tube: 新Tube扫码，Nozzle: 喷嘴扫码，Complete: 完成
+  String page_stage = "User";
+  //String p_user_id = "220653 / HHCHENX"; // 测试用
+  String p_user_id = "";
   String p_machine_id = "";
   String p_new_pr_id = "";
   String p_new_tube_id = "";
   String p_nozzle_id = "";
 
+  // 按钮动画与提交状态
   bool _isButtonPressed = false;
-  bool _isSubmitting = false; // 新增提交状态变量
-  final Key _scannerVisibilityKey = UniqueKey();
+  bool _isSubmitting = false; // 是否正在提交
+  final Key _scannerVisibilityKey = UniqueKey(); // 用于VisibilityDetector
 
   @override
   void initState() {
@@ -56,11 +63,12 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
     });
   }
 
+  /// 页面加载后设置导航栏标题
   void _afterLoad() {
-    // 通过 globalNavBarKey.currentState 调用 setTitle
     globalNavBarKey.currentState?.setTitle('PRMS APP pageFun1');
   }
 
+  /// 检查所有阶段是否已完成扫码
   checkStage() {
     if (p_user_id.isNotEmpty && p_machine_id.isNotEmpty && p_new_pr_id.isNotEmpty && p_new_tube_id.isNotEmpty) {
       return true;
@@ -69,30 +77,15 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
     }
   }
 
-  /// 處理掃描結果，支援單次與連續模式，並彈出對話框或更新畫面
+  /// 处理扫码结果，自动切换阶段
+  /// 支持单次与连续扫码，自动校验格式
   void _handleScan(BarcodeCapture barcodes) {
-    // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
-    // final now = DateTime.now();
-    // if (_lastScanTime != null &&
-    //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
-    //   debugPrint('冷卻中，忽略本次掃描');
-    //   return;
-    // }
-    // _lastScanTime = now;
-
-    // // 在單次掃描模式下，如果已經掃描過，則忽略
-    // if (!_isContinuousScanMode && _hasScanned) {
-    //   debugPrint('單次掃描已完成，忽略新的掃描結果');
-    //   return;
-    // }
-
     for (final barcode in barcodes.barcodes) {
       if (barcode.rawValue != null) {
         final scanContent = barcode.rawValue!;
         debugPrint('掃描結果: $scanContent');
         if (page_stage == "User") {
-          // 当符合 员工ID 的格式时，才会更新 p_user_id
-          // scanContent 必須是6位數字，
+          // 校验员工ID（6位数字）
           if (PrmsDataCheck.isValidUserId(scanContent)) {
             setState(() {
               p_user_id = scanContent;
@@ -100,8 +93,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
             });
           }
         } else if (page_stage == "Machine") {
-          // 当符合 Machine ID 的格式时，才会更新 p_machine_id
-          // 以M開頭+5位數字，可依實際需求調整
+          // 校验机台ID（M开头+5位数字）
           if (PrmsDataCheck.isValidMachineId(scanContent)) {
             setState(() {
               p_machine_id = scanContent;
@@ -109,8 +101,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
             });
           }
         } else if (page_stage == "New_PR") {
-          // 当符合 New PR ID 的格式时，才会更新 p_old_pr_id
-          // PR開頭+6位數字，可依實際需求調整
+          // 校验新PR ID（PR开头+6位数字）
           if (PrmsDataCheck.isValidPrId(scanContent)) {
             setState(() {
               p_new_pr_id = scanContent;
@@ -118,8 +109,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
             });
           }
         } else if (page_stage == "New_Tube") {
-          // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
+          // 校验新Tube ID（TUBE开头+6位数字）
           if (PrmsDataCheck.isValidTubeId(scanContent)) {
             setState(() {
               p_new_tube_id = scanContent;
@@ -127,8 +117,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
             });
           }
         } else if (page_stage == "Nozzle") {
-          // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
+          // 校验Nozzle ID
           if (PrmsDataCheck.isValidNozzleId(scanContent)) {
             setState(() {
               p_nozzle_id = scanContent;
@@ -136,21 +125,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
             });
           }
         }
-
-        // 在這裡可以根據需要處理掃描結果，例如顯示對話框或更新畫面
-        // showDialog(
-        //   context: context,
-        //   builder: (context) => CupertinoAlertDialog(
-        //     title: const Text('掃描結果'),
-        //     content: Text(scanContent),
-        //     actions: [
-        //       CupertinoDialogAction(
-        //         child: const Text('確定'),
-        //         onPressed: () => Navigator.of(context).pop(),
-        //       ),
-        //     ],
-        //   ),
-        // );
+        // 可在此弹窗或处理其它扫码逻辑
       }
     }
   }
@@ -507,6 +482,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                                   onTapDown: (_) => setState(() => _isButtonPressed = true),
                                   onTapUp: (_) => setState(() => _isButtonPressed = false),
                                   onTapCancel: () => setState(() => _isButtonPressed = false),
+                                  // 主要的Submit流程：点击按钮后提交表单数据到后端，包含动画与防重复提交逻辑
                                   /* 主要的Submit流程*/
                                   onTap:
                                       _isSubmitting

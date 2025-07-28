@@ -135,15 +135,18 @@ class _PageFun1State extends State<PageCunsume> {
           if (PrmsDataCheck.isValidTubeId(scanContent)) {
             // 在这个阶段需要在 api 检查 p_old_pr_id 和 p_old_tube_id 是否匹配
             // 如果匹配失败，弹出对话框提示
-            _scannerController.stop();
-
+            //_scannerController.stop();
+            setState(() {
+              p_nozzle_id = scanContent;
+              page_stage = "Nozzle";
+            });
             // 显示 Loading 对话框
-            showCupertinoDialog(
-              context: context,
-              builder: (context) {
-                return CupertinoAlertDialog(title: Row(children: [CupertinoActivityIndicator(), SizedBox(width: 8), const Text('Processing...')]));
-              },
-            );
+            // showCupertinoDialog(
+            //   context: context,
+            //   builder: (context) {
+            //     return CupertinoAlertDialog(title: Row(children: [CupertinoActivityIndicator(), SizedBox(width: 8), const Text('Processing...')]));
+            //   },
+            // );
           }
         } else if (page_stage == "Nozzle") {
           // 当符合 Old Tube ID 的格式时，才会更新 p_old_pr_id
@@ -718,13 +721,14 @@ class _PageFun1State extends State<PageCunsume> {
                                                       }
                                                     }
                                                   },
+                                          // AnimatedScale 用于点击时按钮缩放动画，提升交互体验
                                           child: AnimatedScale(
-                                            scale: _isButtonPressed == true ? 0.96 : 1.0,
-                                            duration: Duration(milliseconds: 80),
+                                            scale: _isButtonPressed == true ? 0.96 : 1.0, // 按下时缩小，松开恢复
+                                            duration: Duration(milliseconds: 80), // 动画时长
                                             child: Container(
                                               padding: EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: _isSubmitting ? CupertinoColors.systemGrey3 : CupertinoColors.activeBlue,
+                                                color: _isSubmitting ? CupertinoColors.systemGrey3 : CupertinoColors.activeBlue, // 提交时变灰
                                                 borderRadius: BorderRadius.circular(10),
                                                 boxShadow: [
                                                   BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 8, offset: Offset(0, 2)),
@@ -733,11 +737,13 @@ class _PageFun1State extends State<PageCunsume> {
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
+                                                  // 提交时显示加载动画，否则显示纸飞机图标
                                                   if (_isSubmitting)
                                                     CupertinoActivityIndicator(color: CupertinoColors.white)
                                                   else
                                                     Icon(CupertinoIcons.paperplane_fill, color: CupertinoColors.white, size: 32),
                                                   SizedBox(width: 4),
+                                                  // 按钮文字，提交时显示Submitting...
                                                   Text(
                                                     _isSubmitting ? 'Submitting...' : 'Submit',
                                                     style: TextStyle(
