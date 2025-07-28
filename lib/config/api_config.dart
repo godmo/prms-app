@@ -9,6 +9,11 @@ class ApiConfig {
   static String get proxyPostUrl => '$_baseProxyUrl/api/proxy/post';
   static String get cleanFlowSubmitUrl => '$_baseApiUrl/CleanFlowRouter/submit';
   static String get moveInSubmitUrl => '$_baseApiUrl/MoveInRack/submit';
+  static String get moveOutSubmitUrl => '$_baseApiUrl/MoveOutRack/submit';
+  static String get cumsumeSubmitUrl => '$_baseApiUrl/consume/submit';
+  static String get cumsumeCheckUrl => '$_baseApiUrl/consume/check';
+  static String get putOnFlowUrl => '$_baseApiUrl/PutOnFlowRouter/submit';
+  static String get takeOffFlowUrl => '$_baseApiUrl/TakeOffFlowRouter/submit';
 
   // 其他可能的端点
   static String get userValidationUrl => '$_baseApiUrl/UserRouter/validate';

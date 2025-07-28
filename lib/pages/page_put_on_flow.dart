@@ -507,6 +507,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                                   onTapDown: (_) => setState(() => _isButtonPressed = true),
                                   onTapUp: (_) => setState(() => _isButtonPressed = false),
                                   onTapCancel: () => setState(() => _isButtonPressed = false),
+                                  /* 主要的Submit流程*/
                                   onTap:
                                       _isSubmitting
                                           ? null
@@ -524,14 +525,18 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                                               client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
                                               return client;
                                             };
-
+                                            // 设置代理地址
                                             final url = ApiConfig.proxyPostUrl;
+                                            // 准备提交数据
                                             final postBody = {
-                                              "url": ApiConfig.moveInSubmitUrl,
+                                              // 取得 putOnFlow的API地址
+                                              "url": ApiConfig.putOnFlowUrl,
                                               "body": {
                                                 "user_id": p_user_id,
-                                                //"rack_id": p_rack_id,
-                                                //"arr_pr": p_pr.map((pr) => {"pr_id": pr}).toList(), // 将 p_pr 转换为正确的数组格式
+                                                "machine_id": p_machine_id,
+                                                "pr_id": p_new_pr_id,
+                                                "tube_id": p_new_tube_id,
+                                                "nozzle_coater_id": p_nozzle_id,
                                               },
                                             };
 
@@ -550,7 +555,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                                                               children: [
                                                                 Icon(CupertinoIcons.check_mark_circled_solid, color: CupertinoColors.activeGreen, size: 28),
                                                                 SizedBox(width: 8),
-                                                                Text('Move In Rack Success'),
+                                                                Text('Put On Flow Success'),
                                                               ],
                                                             ),
                                                             content: Text('Your info has been submitted successfully.'),
@@ -577,7 +582,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                                                               children: [
                                                                 Icon(CupertinoIcons.exclamationmark_triangle_fill, color: CupertinoColors.systemRed, size: 28),
                                                                 SizedBox(width: 8),
-                                                                Text('Move In Rack Fail'),
+                                                                Text('Put On Flow Fail'),
                                                               ],
                                                             ),
                                                             content: Text(responseData['message']),

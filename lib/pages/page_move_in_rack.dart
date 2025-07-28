@@ -385,6 +385,7 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
                                           onTapDown: (_) => setState(() => _isButtonPressed = true),
                                           onTapUp: (_) => setState(() => _isButtonPressed = false),
                                           onTapCancel: () => setState(() => _isButtonPressed = false),
+                                          /* 主要的Submit流程*/
                                           onTap:
                                               _isSubmitting
                                                   ? null
@@ -402,9 +403,11 @@ class _PageMoveInRackState extends State<PageMoveInRack> {
                                                       client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
                                                       return client;
                                                     };
-
+                                                    // 设置代理地址
                                                     final url = ApiConfig.proxyPostUrl;
+                                                    // 准备提交数据
                                                     final postBody = {
+                                                      // 取得 movein的API地址
                                                       "url": ApiConfig.moveInSubmitUrl,
                                                       "body": {
                                                         "user_id": p_user_id,

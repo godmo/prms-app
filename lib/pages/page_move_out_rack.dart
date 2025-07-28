@@ -384,6 +384,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                           onTapDown: (_) => setState(() => _isButtonPressed = true),
                                           onTapUp: (_) => setState(() => _isButtonPressed = false),
                                           onTapCancel: () => setState(() => _isButtonPressed = false),
+                                          /* 主要的Submit流程*/
                                           onTap:
                                               _isSubmitting
                                                   ? null
@@ -404,7 +405,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
 
                                                     final url = ApiConfig.proxyPostUrl;
                                                     final postBody = {
-                                                      "url": ApiConfig.moveInSubmitUrl,
+                                                      "url": ApiConfig.moveOutSubmitUrl,
                                                       "body": {
                                                         "user_id": p_user_id,
                                                         "rack_id": p_rack_id,
@@ -431,7 +432,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                                                           size: 28,
                                                                         ),
                                                                         SizedBox(width: 8),
-                                                                        Text('Move In Rack Success'),
+                                                                        Text('Move Out Rack Success'),
                                                                       ],
                                                                     ),
                                                                     content: Text('Your info has been submitted successfully.'),
@@ -464,7 +465,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                                                           size: 28,
                                                                         ),
                                                                         SizedBox(width: 8),
-                                                                        Text('Move In Rack Fail'),
+                                                                        Text('Move Out Rack Fail'),
                                                                       ],
                                                                     ),
                                                                     content: Text(responseData['message']),

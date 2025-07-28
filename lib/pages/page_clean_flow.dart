@@ -383,6 +383,7 @@ class _PageCleanFlowState extends State<PageCleanFlow> {
                                   onTapDown: (_) => setState(() => _isButtonPressed = true),
                                   onTapUp: (_) => setState(() => _isButtonPressed = false),
                                   onTapCancel: () => setState(() => _isButtonPressed = false),
+                                  /* 主要的Submit流程*/
                                   onTap:
                                       _isSubmitting
                                           ? null

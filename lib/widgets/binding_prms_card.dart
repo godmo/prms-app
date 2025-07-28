@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -225,17 +224,17 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
   void _showWifiSSID(BuildContext context) async {
     try {
       // 显示加载指示器
-      if (context.mounted) {
-        _showLoadingDialog(context);
-      }
+      // if (context.mounted) {
+      //   _showLoadingDialog(context);
+      // }
 
       // 使用原生iOS方法获取WiFi信息
       final wifiResult = await WifiService.getWifiSSIDNative();
 
       // 关闭加载对话框
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      // if (context.mounted) {
+      //   Navigator.of(context).pop();
+      // }
 
       String displayText = '';
 
@@ -383,22 +382,6 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
               },
             ),
           ],
-        );
-      },
-    );
-  }
-
-  // 显示加载对话框
-  void _showLoadingDialog(BuildContext context) {
-    showCupertinoDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const CupertinoAlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [CupertinoActivityIndicator(), SizedBox(height: 16), Text('正在獲取WiFi資訊...', style: TextStyle(fontSize: 14))],
-          ),
         );
       },
     );

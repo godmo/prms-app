@@ -1,7 +1,12 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:prmsapp/config/api_config.dart';
 import 'package:prmsapp/utility/prms_data_check.dart';
 import 'package:prmsapp/widgets/global_nav_bar.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -39,6 +44,8 @@ class _PageFun1State extends State<PageCunsume> {
   String p_new_tube_id = "";
 
   bool _isButtonPressed = false;
+
+  bool _isSubmitting = false; // 新增提交状态变量
   final bool _isPaused = false; // 添加暂停状态变量
   @override
   void initState() {
@@ -560,92 +567,164 @@ class _PageFun1State extends State<PageCunsume> {
                                           onTapDown: (_) => setState(() => _isButtonPressed = true),
                                           onTapUp: (_) => setState(() => _isButtonPressed = false),
                                           onTapCancel: () => setState(() => _isButtonPressed = false),
-                                          onTap: () async {
-                                            setState(() => _isButtonPressed = false);
-                                            await showCupertinoDialog(
-                                              context: context,
-                                              builder:
-                                                  (context) => CupertinoAlertDialog(
-                                                    title: Row(
-                                                      children: [
-                                                        Icon(CupertinoIcons.check_mark_circled_solid, color: CupertinoColors.activeGreen, size: 28),
-                                                        SizedBox(width: 8),
-                                                        Text('Cumsume'),
-                                                      ],
-                                                    ),
-                                                    content: Text('Your info has been submitted successfully.'),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        child: Text('Close'),
-                                                        onPressed: () {
-                                                          Navigator.of(context).pop(); // 先关闭弹窗
-                                                          Navigator.of(context).pushAndRemoveUntil(
-                                                            CupertinoPageRoute(builder: (context) => MainPage(title: 'PRMS APP', initialTabIndex: 0)),
-                                                            (route) => false,
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                            );
-                                          },
-                                          onDoubleTap: () async {
-                                            setState(() => _isButtonPressed = false);
-                                            // 假设你有一个异常信息列表
-                                            List<String> errorMessages = [
-                                              '1：Network error',
-                                              '2：New PR ID mismatch',
-                                              '3：Tube missmatch',
-                                              '4：Mach. Nozzle mismatch',
-                                              // 可以根据实际情况动态生成
-                                            ];
-                                            await showCupertinoDialog(
-                                              context: context,
-                                              builder:
-                                                  (context) => CupertinoAlertDialog(
-                                                    title: Row(
-                                                      children: [
-                                                        Icon(CupertinoIcons.exclamationmark_circle_fill, color: CupertinoColors.systemRed, size: 26),
-                                                        SizedBox(width: 8),
-                                                        Text('Error'),
-                                                      ],
-                                                    ),
-                                                    content: ConstrainedBox(
-                                                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-                                                      child: SingleChildScrollView(
-                                                        child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children:
-                                                              errorMessages
-                                                                  .map(
-                                                                    (msg) => Padding(
-                                                                      padding: const EdgeInsets.only(bottom: 2.0),
-                                                                      child: Text(msg, style: TextStyle(fontSize: 15)),
+                                          /* 主要的Submit流程*/
+                                          onTap:
+                                              _isSubmitting
+                                                  ? null
+                                                  : () async {
+                                                    setState(() {
+                                                      _isButtonPressed = false;
+                                                      _isSubmitting = true; // 开始提交
+                                                    });
+
+                                                    // 创建 Dio 实例并配置（仅用于开发环境）
+                                                    final dio = Dio();
+
+                                                    // 配置忽略SSL证书验证（仅用于开发环境）
+                                                    (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate = (client) {
+                                                      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+                                                      return client;
+                                                    };
+                                                    // 设置代理地址
+                                                    final url = ApiConfig.proxyPostUrl;
+                                                    // 构建提交数据
+                                                    final postBody = {
+                                                      "url": ApiConfig.cumsumeSubmitUrl,
+                                                      "body": {
+                                                        "user_id": p_user_id,
+                                                        "machine_id": p_machine_id,
+                                                        "old_pr_id": p_old_pr_id,
+                                                        "tube_id": p_old_tube_id,
+                                                        "new_pr_id": p_new_pr_id,
+                                                        "nozzle_coater_id": p_nozzle_id,
+                                                      },
+                                                    };
+
+                                                    try {
+                                                      final response = await dio.post(url, data: postBody, options: ApiConfig.defaultHttpOptions);
+
+                                                      if (response.statusCode == 200) {
+                                                        try {
+                                                          final responseData = response.data;
+                                                          if (responseData['status'] == 'success') {
+                                                            await showCupertinoDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) => CupertinoAlertDialog(
+                                                                    title: Row(
+                                                                      children: [
+                                                                        Icon(
+                                                                          CupertinoIcons.check_mark_circled_solid,
+                                                                          color: CupertinoColors.activeGreen,
+                                                                          size: 28,
+                                                                        ),
+                                                                        SizedBox(width: 8),
+                                                                        Text('Cumsume Success'),
+                                                                      ],
                                                                     ),
-                                                                  )
-                                                                  .toList(),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        child: Text('Close'),
-                                                        onPressed: () {
-                                                          Navigator.of(context).pop(); // 先关闭弹窗
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                            );
-                                          },
+                                                                    content: Text('Your info has been submitted successfully.'),
+                                                                    actions: [
+                                                                      CupertinoDialogAction(
+                                                                        child: Text('Close'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop(); // 先关闭弹窗
+                                                                          Navigator.of(context).pushAndRemoveUntil(
+                                                                            CupertinoPageRoute(
+                                                                              builder: (context) => MainPage(title: 'PRMS APP', initialTabIndex: 0),
+                                                                            ),
+                                                                            (route) => false,
+                                                                          );
+                                                                        },
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                            );
+                                                          } else if (responseData['status'] == 'fail') {
+                                                            await showCupertinoDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) => CupertinoAlertDialog(
+                                                                    title: Row(
+                                                                      children: [
+                                                                        Icon(
+                                                                          CupertinoIcons.exclamationmark_triangle_fill,
+                                                                          color: CupertinoColors.systemRed,
+                                                                          size: 28,
+                                                                        ),
+                                                                        SizedBox(width: 8),
+                                                                        Text('Cumsume Fail'),
+                                                                      ],
+                                                                    ),
+                                                                    content: Text(responseData['message']),
+                                                                    actions: [
+                                                                      CupertinoDialogAction(
+                                                                        child: Text('Close'),
+                                                                        onPressed: () {
+                                                                          Navigator.of(context).pop(); // 先关闭弹窗
+                                                                        },
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                            );
+                                                          } else {
+                                                            // 如果status不是success，显示错误信息
+                                                            debugPrint('提交失败: ${responseData['message'] ?? 'Unknown error'}');
+                                                          }
+                                                        } catch (parseError) {
+                                                          debugPrint('响应解析失败: ${parseError.toString()}');
+                                                        }
+                                                        debugPrint('提交成功: ${response.data}');
+                                                      } else {
+                                                        // 失败处理
+                                                        debugPrint('提交失败: 状态码 ${response.statusCode}');
+                                                      }
+                                                    } catch (e) {
+                                                      if (e is DioException) {
+                                                        await showCupertinoDialog(
+                                                          context: context,
+                                                          builder:
+                                                              (context) => CupertinoAlertDialog(
+                                                                title: Row(
+                                                                  children: [
+                                                                    Icon(
+                                                                      CupertinoIcons.exclamationmark_triangle_fill,
+                                                                      color: CupertinoColors.systemRed,
+                                                                      size: 28,
+                                                                    ),
+                                                                    SizedBox(width: 8),
+                                                                    Text('Data submission failed'),
+                                                                  ],
+                                                                ),
+                                                                content: Text('Please check your network connection or try again later.'),
+                                                                actions: [
+                                                                  CupertinoDialogAction(
+                                                                    child: Text('Close'),
+                                                                    onPressed: () {
+                                                                      Navigator.of(context).pop(); // 先关闭弹窗
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                        );
+                                                      } else {
+                                                        debugPrint('请求异常: ${e.toString()}');
+                                                      }
+                                                    } finally {
+                                                      // 无论成功还是失败，都重置提交状态
+                                                      if (mounted) {
+                                                        setState(() {
+                                                          _isSubmitting = false;
+                                                        });
+                                                      }
+                                                    }
+                                                  },
                                           child: AnimatedScale(
                                             scale: _isButtonPressed == true ? 0.96 : 1.0,
                                             duration: Duration(milliseconds: 80),
                                             child: Container(
                                               padding: EdgeInsets.symmetric(vertical: 14),
                                               decoration: BoxDecoration(
-                                                color: CupertinoColors.activeBlue,
+                                                color: _isSubmitting ? CupertinoColors.systemGrey3 : CupertinoColors.activeBlue,
                                                 borderRadius: BorderRadius.circular(10),
                                                 boxShadow: [
                                                   BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 8, offset: Offset(0, 2)),
@@ -654,10 +733,13 @@ class _PageFun1State extends State<PageCunsume> {
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
-                                                  Icon(CupertinoIcons.paperplane_fill, color: CupertinoColors.white, size: 32),
+                                                  if (_isSubmitting)
+                                                    CupertinoActivityIndicator(color: CupertinoColors.white)
+                                                  else
+                                                    Icon(CupertinoIcons.paperplane_fill, color: CupertinoColors.white, size: 32),
                                                   SizedBox(width: 4),
                                                   Text(
-                                                    'Confrim & Submit',
+                                                    _isSubmitting ? 'Submitting...' : 'Submit',
                                                     style: TextStyle(
                                                       fontSize: 18,
                                                       fontWeight: FontWeight.bold,
