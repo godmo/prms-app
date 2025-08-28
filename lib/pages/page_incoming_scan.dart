@@ -38,8 +38,10 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
   String p_user_id = ""; // 220653
   String p_machine_id = "";
 
-  final bool _isButtonPressed = false;
-  final bool _isSubmitting = false; // 新增提交状态变量
+  // 三个条码变量
+  String code1 = "";
+  String code2 = "";
+  String code3 = "";
 
   final Key _scannerVisibilityKey = UniqueKey();
 
@@ -105,6 +107,14 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
     // Flutter 没有 afterLoad 生命周期，但可以用 addPostFrameCallback 实现类似效果
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _afterLoad();
+    });
+
+    // 添加测试数据来展示条码UI效果
+    // 你可以根据实际需要修改或删除这些测试数据
+    setState(() {
+      code1 = "";
+      code2 = "";
+      code3 = "";
     });
   }
 
@@ -271,9 +281,31 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(child: [Row(children: [Text('aaa')],)]
 
-                ),)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: screenWidth * 0.06),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.systemGrey6.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: CupertinoColors.systemGrey4, width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildCodeRow('Code 1', code1),
+                          const SizedBox(height: 8),
+                          _buildCodeRow('Code 2', code2),
+                          const SizedBox(height: 8),
+                          _buildCodeRow('Code 3', code3),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // 这边加上 一个 Button 来推送资料到MQTT
+                SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), child: _buildBottomInfo())),
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Align(
@@ -293,7 +325,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
           ),
         ],
       ),
-    )
+    );
   }
 
   @override
@@ -307,104 +339,55 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
     super.dispose();
   }
 
-  // 新增iOS风格按钮构建方法
-  Widget _buildStageButton(
-    BuildContext context, {
-    IconData? icon,
-    Widget? iconWidget,
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-    double height = 48, // 新增height参数，默认48
-  }) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2.0),
-        child: SizedBox(
-          height: height, // 统一高度
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
-            color: selected ? const Color(0xFF204080) : CupertinoColors.systemGrey5,
-            borderRadius: BorderRadius.circular(8),
-            onPressed: onTap,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                iconWidget ?? Icon(icon, size: 22, color: selected ? CupertinoColors.white : CupertinoColors.activeBlue),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: selected ? CupertinoColors.white : CupertinoColors.systemGrey,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 專業iOS表單行（帶圖標與顏色）
-  Widget _buildInfoRowStyled(
-    String label,
-    String value,
-    IconData? icon, {
-    Color? color,
-    Widget? iconWidget,
-    Image? img, // 新增参数
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-      child: Row(
-        children: [
-          iconWidget ??
-              (icon != null
-                  ? Icon(icon, size: 22, color: color ?? CupertinoColors.systemGrey)
-                  : (img != null ? SizedBox(width: 22, height: 22, child: img) : SizedBox(width: 22, height: 22))),
-          SizedBox(width: 10),
-          SizedBox(width: 110, child: Text(label, style: TextStyle(color: CupertinoColors.systemGrey, fontWeight: FontWeight.w500, fontSize: 15))),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: CupertinoColors.label, fontWeight: FontWeight.bold, fontSize: 16),
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 專業iOS分隔線
-  Widget _buildDivider() {
-    return Container(margin: EdgeInsets.symmetric(horizontal: 12), height: 1, color: CupertinoColors.systemGrey5);
-  }
-
   // 优化底部信息显示，减少重复判断
   Widget _buildBottomInfo() {
+    List<Widget> widgets = [];
+
+    // 显示用户ID或机器ID信息
     String info = '';
     if (page_stage == "User" && p_user_id.isNotEmpty) {
       info = 'User Id : $p_user_id';
     } else if (page_stage == "Machine" && p_machine_id.isNotEmpty) {
       info = 'Machine Id : $p_machine_id';
     }
-    if (info.isEmpty) return const SizedBox.shrink();
-    return Text(
-      info,
-      style: const TextStyle(
-        color: Color(0xFF204080), // 柔和蓝色
-        fontSize: 20.0, // 更大
-        fontWeight: FontWeight.w600, // 半粗体
-        letterSpacing: 0.5,
-        shadows: [Shadow(color: Color(0x22000000), offset: Offset(0, 1), blurRadius: 2)],
-      ),
-      textAlign: TextAlign.center,
+
+    if (info.isNotEmpty) {
+      widgets.add(
+        Text(
+          info,
+          style: const TextStyle(
+            color: Color(0xFF204080), // 柔和蓝色
+            fontSize: 20.0, // 更大
+            fontWeight: FontWeight.w600, // 半粗体
+            letterSpacing: 0.5,
+            shadows: [Shadow(color: Color(0x22000000), offset: Offset(0, 1), blurRadius: 2)],
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+      widgets.add(const SizedBox(height: 16));
+    }
+
+    // 显示三个条码信息
+
+    if (widgets.isEmpty) return const SizedBox.shrink();
+
+    return Column(children: widgets);
+  }
+
+  // 构建条码行的辅助方法
+  Widget _buildCodeRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('$label:', style: const TextStyle(color: CupertinoColors.systemGrey, fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(value, style: const TextStyle(color: Color(0xFF204080), fontSize: 16, fontWeight: FontWeight.w600)),
+        // 加上 CupertinoIcons ， 如果是 value 是空则显示警告图标 ， 如果是正常的value 则显示 check 图标
+        if (value.isEmpty)
+          Icon(CupertinoIcons.exclamationmark_triangle, color: CupertinoColors.systemRed, size: 20)
+        else
+          Icon(CupertinoIcons.check_mark, color: CupertinoColors.systemGreen, size: 20),
+      ],
     );
   }
 }
