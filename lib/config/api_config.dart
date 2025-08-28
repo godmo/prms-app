@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class ApiConfig {
   // 基础配置
-  static const String _baseProxyUrl = 'https://10.125.1.104:3002';
+  static const String _baseProxyUrl = 'https://vismobile.vis.com.tw:3002';
   static const String _baseApiUrl = 'http://10.29.11.237:5098';
 
   // API 端点

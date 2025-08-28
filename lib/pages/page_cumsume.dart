@@ -137,12 +137,12 @@ class _PageFun1State extends State<PageCunsume> {
             // 如果匹配失败，弹出对话框提示
             //_scannerController.stop();
             setState(() {
-              p_nozzle_id = scanContent;
+              p_old_tube_id = scanContent;
               page_stage = "Nozzle";
             });
             // 显示 Loading 对话框
             // showCupertinoDialog(
-            //   context: context,
+            //   context: context,tf
             //   builder: (context) {
             //     return CupertinoAlertDialog(title: Row(children: [CupertinoActivityIndicator(), SizedBox(width: 8), const Text('Processing...')]));
             //   },

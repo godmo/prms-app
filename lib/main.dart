@@ -1,15 +1,23 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart'; // 引入services套件以設定系統UI樣式
-import 'package:prmsapp/services/messaging_service.dart';
 import 'package:prmsapp/pages/main_page.dart';
 import 'package:prmsapp/pages/splash_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
 import 'package:prmsapp/providers/auth_provider.dart';
+import 'package:prmsapp/services/config_service.dart';
+import 'package:provider/provider.dart';
 
 /// ViScanner應用程序主入口點
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 確保Flutter綁定已初始化
+
+  // 初始化配置服務
+  try {
+    await ConfigService.loadConfig();
+  } catch (e) {
+    print("Config loading failed: $e");
+    return;
+  }
 
   // 初始化Firebase
   try {
@@ -41,11 +49,7 @@ class PrmsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => AuthProvider(),
-      child: CupertinoApp(
-        debugShowCheckedModeBanner: false,
-        theme: const CupertinoThemeData(brightness: Brightness.light),
-        home: const SplashToMain(),
-      ),
+      child: CupertinoApp(debugShowCheckedModeBanner: false, theme: const CupertinoThemeData(brightness: Brightness.light), home: const SplashToMain()),
     );
   }
 }
@@ -73,8 +77,6 @@ class _SplashToMainState extends State<SplashToMain> {
 
   @override
   Widget build(BuildContext context) {
-    return _showSplash
-        ? const SplashScreen()
-        : MainPage(title: 'PRMS APP main');
+    return _showSplash ? const SplashScreen() : MainPage(title: 'PRMS APP main');
   }
 }

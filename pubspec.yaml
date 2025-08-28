@@ -57,6 +57,8 @@ dependencies:
   msal_auth: ^3.1.4
   flutter_spinkit: ^5.2.1 # 載入動畫元件
   network_info_plus: ^6.1.4
+  device_info_plus: ^11.4.0 # 取得裝置資訊
+  uuid: ^4.5.1 # 產生唯一識別碼
 
 
 dev_dependencies:
@@ -87,6 +89,8 @@ flutter:
    - assets/machine.png
    - assets/put_on_flow.png
    - assets/take_off_flow.png
+   - assets/app_config.json
+   - assets/msal_config.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

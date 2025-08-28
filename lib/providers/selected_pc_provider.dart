@@ -20,9 +20,7 @@ class SelectedPCProvider extends ChangeNotifier {
     final list = prefs.getStringList(_pcListKey) ?? [];
     _pcList.clear();
     _pcList.addAll(list);
-    _selectedPC =
-        prefs.getString(_selectedPCKey) ??
-        (_pcList.isNotEmpty ? _pcList.last : 'Please Bind PC');
+    _selectedPC = prefs.getString(_selectedPCKey) ?? (_pcList.isNotEmpty ? _pcList.last : 'Please Bind PC');
     notifyListeners();
   }
 

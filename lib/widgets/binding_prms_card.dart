@@ -13,6 +13,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 // 各功能页面
 import 'package:prmsapp/pages/page_clean_flow.dart'; // 清洁流程页面
 import 'package:prmsapp/pages/page_cumsume.dart'; // 消耗页面
+import 'package:prmsapp/pages/page_incoming_scan.dart'; // 进货扫描页面
 import 'package:prmsapp/pages/page_move_in_rack.dart'; // 移入机架页面
 import 'package:prmsapp/pages/page_move_out_rack.dart'; // 移出机架页面
 import 'package:prmsapp/pages/page_put_on_flow.dart'; // 上机流程页面
@@ -154,6 +155,17 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                   onPressed: () {
                     // 跳转到清洁流程页面，处理设备清洁和状态重置
                     Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageCleanFlow()));
+                  },
+                ),
+                SizedBox(height: 6), // 按钮间距
+                // 光阻液解除 Alert - 清洁流程功能按钮
+                _buildCupertinoButton(
+                  context,
+                  icon: CupertinoIcons.camera_viewfinder, // 更贴合"清除/重置"用途的图标
+                  label: '  Incoming Scan',
+                  onPressed: () {
+                    // 跳转到清洁流程页面，处理设备清洁和状态重置
+                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageIncomingScan()));
                   },
                 ),
                 SizedBox(height: 6), // 按钮间距
