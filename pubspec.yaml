@@ -91,6 +91,7 @@ flutter:
    - assets/take_off_flow.png
    - assets/app_config.json
    - assets/msal_config.json
+   - assets/icon/app_icon_vis4.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

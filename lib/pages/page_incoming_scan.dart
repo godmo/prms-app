@@ -8,6 +8,7 @@ import 'package:prmsapp/utility/prms_data_check.dart';
 import 'package:prmsapp/widgets/binding_pc_card.dart';
 import 'package:prmsapp/widgets/global_nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import 'main_page.dart';
 
@@ -203,7 +204,8 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                     child: Column(
                       children: [
                         BindingPCCard(pcList: pcList, onQRScan: _navigateToQRScanTab, onShowPicker: _showPicker),
-                        const SizedBox(height: 16),
+
+                        //const SizedBox(height: 16),
                         // VPN 狀態卡片 不要移除 未來可能使用
                         // FutureBuilder<bool>(
                         //   future: _checkVPN(),
@@ -216,6 +218,62 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                     ),
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: VisibilityDetector(
+                    key: _scannerVisibilityKey,
+                    onVisibilityChanged: (visibilityInfo) {
+                      if (!mounted) return;
+                      final visibleFraction = visibilityInfo.visibleFraction;
+                      debugPrint('Scanner visibility: \\${visibleFraction * 100}%');
+                      if (visibleFraction > 0) {
+                        debugPrint('Scanner is visible, starting camera...');
+                        _scannerController.start().catchError((error) {
+                          debugPrint('Error starting camera: \\$error');
+                        });
+                      } else {
+                        debugPrint('Scanner is not visible, stopping camera...');
+                        _scannerController.stop();
+                      }
+                    },
+                    child: Center(
+                      child: Container(
+                        width: MediaQuery.of(context).size.width * 0.85,
+                        height: MediaQuery.of(context).size.height * 0.28,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemGrey6.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 16, offset: Offset(0, 6))],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: MobileScanner(controller: _scannerController, fit: BoxFit.cover, onDetect: _handleScan),
+                            ),
+                            // 四角高亮装饰
+                            Positioned.fill(child: CustomPaint(painter: _CornerDecorationPainter())),
+                            // 摄像头切换按钮
+                            Positioned(
+                              top: 14.0,
+                              left: 14.0,
+                              child: CupertinoButton(
+                                padding: const EdgeInsets.all(8.0),
+                                color: CupertinoColors.black.withOpacity(0.32),
+                                borderRadius: BorderRadius.circular(20.0),
+                                onPressed: () => _scannerController.switchCamera(),
+                                child: Icon(CupertinoIcons.camera_rotate, size: MediaQuery.of(context).size.width * 0.06, color: CupertinoColors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(child: [Row(children: [Text('aaa')],)]
+
+                ),)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Align(
@@ -235,7 +293,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
           ),
         ],
       ),
-    );
+    )
   }
 
   @override

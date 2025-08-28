@@ -50,7 +50,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
                 });
               },
               child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 16.0),
+                // margin: const EdgeInsets.symmetric(vertical: 16.0),
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: 15.0),
                 decoration: BoxDecoration(
                   color: isTapped ? cardColor.withOpacity(0.7) : cardColor,

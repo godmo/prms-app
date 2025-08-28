@@ -4,6 +4,7 @@ import 'package:flutter/services.dart'; // 引入services套件以設定系統UI
 import 'package:prmsapp/pages/main_page.dart';
 import 'package:prmsapp/pages/splash_screen.dart';
 import 'package:prmsapp/providers/auth_provider.dart';
+import 'package:prmsapp/providers/selected_pc_provider.dart';
 import 'package:prmsapp/services/config_service.dart';
 import 'package:provider/provider.dart';
 
@@ -47,8 +48,8 @@ class PrmsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthProvider(),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (context) => AuthProvider()), ChangeNotifierProvider(create: (context) => SelectedPCProvider())],
       child: CupertinoApp(debugShowCheckedModeBanner: false, theme: const CupertinoThemeData(brightness: Brightness.light), home: const SplashToMain()),
     );
   }
