@@ -32,21 +32,76 @@ class BindingPrmsCard extends StatefulWidget {
 
   @override
   State<BindingPrmsCard> createState() => _BindingPCCardState();
-
-  
 }
 
 /// 绑定卡片的状态类，负责渲染所有按钮和功能
-class _BindingPCCardState extends State<BindingPrmsCard> {
+class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObserver {
   // 是否被点击（预留扩展）
   bool isTapped = false;
 
+  // 当前 WiFi SSID
+  String currentSSID = 'Loading...';
+
   @override
-  void async @override
-  initState() {
+  void initState() {
     super.initState();
-    _loadAppVersion();
+    // 添加应用生命周期监听器
+    WidgetsBinding.instance.addObserver(this);
+    // 初始化时执行 WiFi 检查
+    _performWiFiCheck();
   }
+
+  @override
+  void dispose() {
+    // 移除应用生命周期监听器
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // 当应用从后台返回到前台时执行 WiFi 检查
+    if (state == AppLifecycleState.resumed) {
+      _performWiFiCheck();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 当从其他页面返回时执行 WiFi 检查
+    _performWiFiCheck();
+  }
+
+  /// 执行 WiFi 检查的方法
+  void _performWiFiCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        try {
+          final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+
+          // 执行白名单检查，这会更新 WiFi 信息
+          await wifiProvider.checkWiFiWithWhitelist(context);
+
+          // 更新状态显示 SSID
+          if (mounted) {
+            setState(() {
+              currentSSID = wifiProvider.wifiSSID.isNotEmpty ? wifiProvider.wifiSSID : 'Not Connected';
+            });
+          }
+        } catch (e) {
+          // 如果获取 SSID 失败，显示错误信息
+          if (mounted) {
+            setState(() {
+              currentSSID = 'Error: ${e.toString()}';
+            });
+          }
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // 获取屏幕宽度用于自适应布局，确保在不同设备上都能正确显示
@@ -215,6 +270,41 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                 SizedBox(height: 6), // 按钮间距
                 // 使用Expanded占据剩余空间，将版权信息推到底部
                 Expanded(child: SizedBox()),
+                // WiFi SSID 显示区域
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: CupertinoColors.systemGrey4.withOpacity(0.6), width: 1.0),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.wifi,
+                        color: currentSSID.contains('Error') || currentSSID == 'Not Connected' ? CupertinoColors.systemRed : CupertinoColors.systemGreen,
+                        size: 16.0,
+                      ),
+                      const SizedBox(width: 8.0),
+                      Flexible(
+                        child: Text(
+                          'WiFi: $currentSSID',
+                          style: TextStyle(
+                            color: currentSSID.contains('Error') || currentSSID == 'Not Connected' ? CupertinoColors.systemRed : CupertinoColors.systemBlue,
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // 版权信息区域
                 Padding(
                   padding: const EdgeInsets.only(top: 0.0, bottom: 4.0),
@@ -318,70 +408,6 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
           ],
         ),
       ),
-    );
-  }
-
-  /// 顯示WiFi SSID信息的異步方法
-  ///
-  /// 功能說明：
-  /// 1. 使用 WiFiProvider 中的白名單檢查方法來獲取 WiFi 信息
-  /// 2. 自動檢查 SSID 是否在白名單中
-  /// 3. 如果不在白名單中，顯示禁止使用的通知
-  /// 4. 如果在白名單中，顯示正常的 WiFi 信息
-  ///
-  /// 參數：
-  /// - [context]: 用於顯示對話框的構建上下文
-  void _showWifiSSID(BuildContext context) async {
-    try {
-      // 獲取 WiFi Provider
-      final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-
-      // 🔒 使用 WiFiProvider 的白名單檢查方法
-      // 這會自動檢查 SSID 是否在白名單中，並顯示相應的對話框
-      await wifiProvider.checkWiFiWithWhitelist(context);
-    } catch (e) {
-      // 異常處理：如果 WiFiProvider 方法失敗，顯示備用錯誤信息
-      if (context.mounted) {
-        _showSSIDDialog(
-          context,
-          'Error',
-          'Failed to get WiFi information: ${e.toString()}\n\nPlease ensure:\n• Location services are enabled\n• App has location permission\n• Device is connected to WiFi',
-        );
-      }
-    }
-  }
-
-  /// 显示WiFi信息对话框
-  ///
-  /// 参数说明：
-  /// - [context]: 构建上下文
-  /// - [title]: 对话框标题
-  /// - [content]: 对话框内容文本
-  ///
-  /// 创建并显示一个Cupertino风格的信息对话框
-  void _showSSIDDialog(BuildContext context, String title, String content) {
-    showCupertinoDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          // 对话框标题样式
-          title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.black)),
-          // 对话框内容区域
-          content: Padding(
-            padding: const EdgeInsets.only(top: 16), // 标题与内容间距
-            child: Text(content, style: const TextStyle(fontSize: 14, color: CupertinoColors.black), textAlign: TextAlign.left),
-          ),
-          // 对话框操作按钮
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('OK', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 

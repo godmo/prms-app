@@ -109,6 +109,7 @@ class WiFiProvider extends ChangeNotifier {
           'VSMC_Guest',
           'VIS_Lab',
           'TestWiFi',
+
           // 添加更多預設的 WiFi SSID
         ];
         await _saveWifiWhitelist();
@@ -362,8 +363,9 @@ class WiFiProvider extends ChangeNotifier {
     if (showDialog && context.mounted) {
       final title = result['success'] == true ? 'WiFi Information' : 'Error';
       final content = result['displayText'] as String;
-
-      _showWiFiDialog(context, title, content);
+      if (result['success'] == false) {
+        _showWiFiDialog(context, title, content);
+      }
     }
 
     return result;
@@ -409,7 +411,7 @@ class WiFiProvider extends ChangeNotifier {
           // WiFi 在白名單中，顯示正常信息
           final title = 'WiFi Information';
           final content = result['displayText'] as String;
-          _showWiFiDialog(context, title, content);
+          //_showWiFiDialog(context, title, content);
 
           return {'success': true, 'whitelisted': true, 'cleanWifiName': cleanWifiName, 'displayText': result['displayText']};
         }
