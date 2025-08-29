@@ -125,7 +125,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
     // 通过 globalNavBarKey.currentState 调用 setTitle
     globalNavBarKey.currentState?.setTitle('PRMS APP pageFun1');
     if (MqttService().isConnected.value == true) {
-      scan_mode = "Barcode";
+      scan_mode = "BarCode";
     }
   }
 
@@ -139,21 +139,6 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
 
   /// 處理掃描結果，支援單次與連續模式，並彈出對話框或更新畫面
   void _handleScan(BarcodeCapture barcodes) {
-    // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
-    // final now = DateTime.now();
-    // if (_lastScanTime != null &&
-    //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
-    //   debugPrint('冷卻中，忽略本次掃描');
-    //   return;
-    // }
-    // _lastScanTime = now;
-
-    // // 在單次掃描模式下，如果已經掃描過，則忽略
-    // if (!_isContinuousScanMode && _hasScanned) {
-    //   debugPrint('單次掃描已完成，忽略新的掃描結果');
-    //   return;
-    // }
-
     for (final barcode in barcodes.barcodes) {
       if (barcode.rawValue != null) {
         final scanContent = barcode.rawValue!.trim();
@@ -189,10 +174,9 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                 debugPrint('[DEBUG] 已將 topic 加入 PC List: $newPC');
                 context.read<SelectedPCProvider>().setSelectedPC(newPC);
                 debugPrint('[DEBUG] 已將 topic 設為當前選擇: $newPC');
-
                 // 綁定成功後再背景重連 MQTT，不阻塞 UI
                 MqttService().connect();
-
+                // 切換回條碼掃描模式
                 scan_mode = "BarCode";
               }
             }
@@ -238,24 +222,10 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      vertical: 24.0, // 增大垂直間距
+                      vertical: 6.0, // 增大垂直間距
                       horizontal: screenWidth * 0.06, // 增大水平間距
                     ),
-                    child: Column(
-                      children: [
-                        BindingPCCard(pcList: pcList, onQRScan: _navigateToQRScanTab, onShowPicker: _showPicker),
-
-                        //const SizedBox(height: 16),
-                        // VPN 狀態卡片 不要移除 未來可能使用
-                        // FutureBuilder<bool>(
-                        //   future: _checkVPN(),
-                        //   builder: (context, snapshot) {
-                        //     final connected = snapshot.data ?? false;
-                        //     return VpnStatusCard(connected: connected);
-                        //   },
-                        // ),
-                      ],
-                    ),
+                    child: Column(children: [BindingPCCard(pcList: pcList, onQRScan: _navigateToQRScanTab, onShowPicker: _showPicker)]),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -293,18 +263,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                             ),
                             // 四角高亮装饰
                             Positioned.fill(child: CustomPaint(painter: _CornerDecorationPainter())),
-                            // 摄像头切换按钮
-                            Positioned(
-                              top: 14.0,
-                              left: 14.0,
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.all(8.0),
-                                color: CupertinoColors.black.withOpacity(0.32),
-                                borderRadius: BorderRadius.circular(20.0),
-                                onPressed: () => _scannerController.switchCamera(),
-                                child: Icon(CupertinoIcons.camera_rotate, size: MediaQuery.of(context).size.width * 0.06, color: CupertinoColors.white),
-                              ),
-                            ),
+
                             Positioned(
                               top: 14.0,
                               left: 250.0,
@@ -328,7 +287,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: screenWidth * 0.06),
+                    padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: screenWidth * 0.06),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -349,10 +308,8 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                   ),
                 ),
                 // MQTT推送按钮
-                SliverToBoxAdapter(
-                  child: Padding(padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: screenWidth * 0.06), child: _buildMqttPushButton()),
-                ),
-                SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), child: _buildBottomInfo())),
+                SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 0.0, horizontal: screenWidth * 0.06), child: _buildMqttPushButton())),
+                SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0), child: _buildBottomInfo())),
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Align(
@@ -436,6 +393,23 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
           Icon(CupertinoIcons.exclamationmark_triangle, color: CupertinoColors.systemRed, size: 20)
         else
           Icon(CupertinoIcons.check_mark, color: CupertinoColors.systemGreen, size: 20),
+        // 清除資料圖示
+        CupertinoButton(
+          padding: const EdgeInsets.all(2),
+          minSize: 0,
+          onPressed: () {
+            setState(() {
+              if (label == 'Code 1') {
+                code1 = '';
+              } else if (label == 'Code 2') {
+                code2 = '';
+              } else if (label == 'Code 3') {
+                code3 = '';
+              }
+            });
+          },
+          child: Icon(CupertinoIcons.clear_circled, color: CupertinoColors.systemGrey, size: 18),
+        ),
       ],
     );
   }
@@ -450,7 +424,6 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
         boxShadow: [BoxShadow(color: const Color(0xFF1E90FF).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: CupertinoButton(
-        //padding: const EdgeInsets.symmetric(vertical: 16.0),
         onPressed: _isPushing ? null : _pushDataToMqtt,
         child:
             _isPushing
@@ -467,7 +440,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                   children: [
                     Icon(CupertinoIcons.cloud_upload, color: CupertinoColors.white, size: 20),
                     SizedBox(width: 8),
-                    Text('Send PC', style: TextStyle(color: CupertinoColors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text('Send To PC', style: TextStyle(color: CupertinoColors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                   ],
                 ),
       ),
@@ -488,29 +461,14 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
         await MqttService().connect();
       }
 
-      // 构建要发送的数据
-      final selectedPC = context.read<SelectedPCProvider>().selectedPC;
-      final data = {
-        'user_id': p_user_id,
-        'machine_id': p_machine_id,
-        'page_stage': page_stage,
-        'code1': code1,
-        'code2': code2,
-        'code3': code3,
-        'selected_pc': selectedPC,
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
       // 发送数据到MQTT，使用user_id作为topic
-      final topic = p_user_id.isNotEmpty ? p_user_id : 'default';
-      final message = data.toString();
-
+      final topic = context.read<SelectedPCProvider>().selectedPC;
+      final message = "$code1\$$code2\$$code3";
       final success = await MqttService().publishAndWaitAck(topic, message);
-
       if (success) {
-        _showResultDialog('Success', 'Data pushed to MQTT successfully!', CupertinoColors.systemGreen);
+        _showResultDialog('Success', 'Send data successfully!', CupertinoColors.systemGreen);
       } else {
-        _showResultDialog('Failed', 'Failed to push data to MQTT. Please try again.', CupertinoColors.systemRed);
+        _showResultDialog('Failed', 'Failed to send data to PC. Please try again.', CupertinoColors.systemRed);
       }
     } catch (e) {
       debugPrint('Error pushing data to MQTT: $e');

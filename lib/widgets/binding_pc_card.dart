@@ -51,7 +51,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
               },
               child: Container(
                 // margin: const EdgeInsets.symmetric(vertical: 16.0),
-                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: 15.0),
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: 5.0),
                 decoration: BoxDecoration(
                   color: isTapped ? cardColor.withOpacity(0.7) : cardColor,
                   borderRadius: BorderRadius.circular(16.0),
@@ -71,7 +71,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 5),
                     if (connecting)
                       Center(
                         child: CupertinoActivityIndicator(
@@ -132,7 +132,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
                               widget.onQRScan(true);
                             },
                             child: Container(
-                              padding: const EdgeInsets.all(12.0),
+                              padding: const EdgeInsets.all(6.0),
                               decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12.0)),
                               child: Icon(CupertinoIcons.qrcode, size: screenWidth * 0.08, color: iconColor),
                             ),
@@ -142,7 +142,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
                     // 新增：若未連線顯示提醒
                     if (!connected)
                       Padding(
-                        padding: const EdgeInsets.only(top: 10.0, left: 2.0, right: 2.0),
+                        padding: const EdgeInsets.only(top: 2.0, left: 2.0, right: 2.0),
                         child: Text(
                           'Please check:\n1. Is VPN connected?\n2. Is bound PC name correct?\n3. Is PC\'s binding QRcode enabled?',
                           style: TextStyle(color: CupertinoColors.systemRed, fontSize: 13, fontWeight: FontWeight.w500),
@@ -151,7 +151,7 @@ class _BindingPCCardState extends State<BindingPCCard> {
                     // 新增：若已選擇PC，顯示提醒打開PC端小程式
                     if (selectedPC.isNotEmpty && selectedPC != 'Please Bind PC' && connected)
                       Padding(
-                        padding: const EdgeInsets.only(top: 10.0, left: 2.0, right: 2.0),
+                        padding: const EdgeInsets.only(top: 2.0, left: 2.0, right: 2.0),
                         child: Row(
                           children: const [
                             Icon(CupertinoIcons.info, color: CupertinoColors.systemGreen, size: 18),
