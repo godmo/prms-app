@@ -42,6 +42,12 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
   String code2 = "";
   String code3 = "";
 
+  // 掃描緩衝機制 - 用於確保掃描結果的穩定性
+  static const int _scanBufferSize = 5;
+  final List<String> _code1Buffer = [];
+  final List<String> _code2Buffer = [];
+  final List<String> _code3Buffer = [];
+
   // QR码解析对象
   Map<String, dynamic>? qrcode_obj;
 
@@ -162,14 +168,11 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
             return;
           } else {
             if (scanContent.startsWith("1")) {
-              code1 = scanContent;
-              setState(() {});
+              _addToBuffer(_code1Buffer, scanContent, 1);
             } else if (scanContent.startsWith("2")) {
-              code2 = scanContent;
-              setState(() {});
+              _addToBuffer(_code2Buffer, scanContent, 2);
             } else if (scanContent.startsWith("3")) {
-              code3 = scanContent;
-              setState(() {});
+              _addToBuffer(_code3Buffer, scanContent, 3);
             }
           }
         } else if (scan_mode == "QRCode") {
@@ -347,6 +350,36 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                       ),
                       child: Column(
                         children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Scan Results', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: CupertinoColors.black)),
+                              if (code1.isNotEmpty || code2.isNotEmpty || code3.isNotEmpty)
+                                CupertinoButton(
+                                  padding: const EdgeInsets.all(4),
+                                  minSize: 0,
+                                  onPressed: () {
+                                    setState(() {
+                                      code1 = '';
+                                      code2 = '';
+                                      code3 = '';
+                                      _clearBuffer(1);
+                                      _clearBuffer(2);
+                                      _clearBuffer(3);
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(CupertinoIcons.clear_circled_solid, color: CupertinoColors.systemRed, size: 20),
+                                      const SizedBox(width: 4),
+                                      Text('Clear All', style: TextStyle(color: CupertinoColors.systemRed, fontSize: 14, fontWeight: FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           _buildCodeRow('Code 1', code1),
                           const SizedBox(height: 8),
                           _buildCodeRow('Code 2', code2),
@@ -454,10 +487,13 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
             setState(() {
               if (label == 'Code 1') {
                 code1 = '';
+                _clearBuffer(1);
               } else if (label == 'Code 2') {
                 code2 = '';
+                _clearBuffer(2);
               } else if (label == 'Code 3') {
                 code3 = '';
+                _clearBuffer(3);
               }
             });
           },
@@ -622,6 +658,67 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
         );
       },
     );
+  }
+
+  /// 添加掃描結果到緩衝區，當緩衝區滿且所有值相同時才確認結果
+  void _addToBuffer(List<String> buffer, String scanResult, int codeNumber) {
+    // 添加新的掃描結果到緩衝區
+    buffer.add(scanResult);
+
+    // 如果緩衝區超過設定大小，移除最舊的元素
+    if (buffer.length > _scanBufferSize) {
+      buffer.removeAt(0);
+    }
+
+    // 檢查緩衝區是否已滿且所有值都相同
+    if (buffer.length == _scanBufferSize && _isBufferConsistent(buffer)) {
+      // 確認掃描結果並更新對應的code變數
+      switch (codeNumber) {
+        case 1:
+          if (code1 != scanResult) {
+            code1 = scanResult;
+            setState(() {});
+            debugPrint('Code 1 確認: $scanResult');
+          }
+          break;
+        case 2:
+          if (code2 != scanResult) {
+            code2 = scanResult;
+            setState(() {});
+            debugPrint('Code 2 確認: $scanResult');
+          }
+          break;
+        case 3:
+          if (code3 != scanResult) {
+            code3 = scanResult;
+            setState(() {});
+            debugPrint('Code 3 確認: $scanResult');
+          }
+          break;
+      }
+    }
+  }
+
+  /// 檢查緩衝區中的所有值是否一致
+  bool _isBufferConsistent(List<String> buffer) {
+    if (buffer.isEmpty) return false;
+    String firstValue = buffer.first;
+    return buffer.every((value) => value == firstValue);
+  }
+
+  /// 清除指定的緩衝區
+  void _clearBuffer(int codeNumber) {
+    switch (codeNumber) {
+      case 1:
+        _code1Buffer.clear();
+        break;
+      case 2:
+        _code2Buffer.clear();
+        break;
+      case 3:
+        _code3Buffer.clear();
+        break;
+    }
   }
 }
 
