@@ -110,6 +110,9 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
       _afterLoad();
     });
 
+    // 添加MQTT连接状态监听
+    MqttService().isConnected.addListener(_onMqttConnectionChanged);
+
     // 添加测试数据来展示条码UI效果
     // 你可以根据实际需要修改或删除这些测试数据
     setState(() {
@@ -120,8 +123,21 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
   }
 
   void _afterLoad() {
+    _checkAndSwitchScanMode();
+  }
+
+  void _onMqttConnectionChanged() {
+    if (mounted) {
+      _checkAndSwitchScanMode();
+    }
+  }
+
+  void _checkAndSwitchScanMode() {
     if (MqttService().isConnected.value == true) {
-      scan_mode = "BarCode";
+      setState(() {
+        scan_mode = "BarCode";
+      });
+      debugPrint('MQTT已連接，自動切換到BarCode掃描模式');
     }
   }
 
@@ -312,27 +328,6 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                                 ),
                               ),
                             ),
-
-                            // 相機切換按鈕
-                            Positioned(
-                              top: 12.0,
-                              left: 16.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: CupertinoColors.systemGrey.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(18.0),
-                                  boxShadow: [BoxShadow(color: CupertinoColors.black.withOpacity(0.2), blurRadius: 6, offset: const Offset(0, 2))],
-                                ),
-                                child: CupertinoButton(
-                                  padding: const EdgeInsets.all(8.0),
-                                  color: const Color.fromRGBO(0, 0, 0, 0),
-                                  borderRadius: BorderRadius.circular(18.0),
-                                  minSize: 0,
-                                  onPressed: () => _scannerController.switchCamera(),
-                                  child: const Icon(CupertinoIcons.camera_rotate, color: CupertinoColors.white, size: 20),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -389,6 +384,9 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
 
   @override
   void dispose() {
+    // 移除MQTT連接狀態監聽
+    MqttService().isConnected.removeListener(_onMqttConnectionChanged);
+
     try {
       _scannerController.stop();
     } catch (e) {
