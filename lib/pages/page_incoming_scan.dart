@@ -11,8 +11,6 @@ import 'package:prmsapp/widgets/global_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-import 'main_page.dart';
-
 class PageIncomingScan extends StatefulWidget {
   final GlobalKey<GlobalNavBarState>? navBarKey;
   final void Function({bool fromBindingCard})? onQRScanTab;
@@ -122,8 +120,6 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
   }
 
   void _afterLoad() {
-    // 通过 globalNavBarKey.currentState 调用 setTitle
-    globalNavBarKey.currentState?.setTitle('PRMS APP pageFun1');
     if (MqttService().isConnected.value == true) {
       scan_mode = "BarCode";
     }
@@ -251,31 +247,90 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                         height: MediaQuery.of(context).size.height * 0.28,
                         decoration: BoxDecoration(
                           color: CupertinoColors.systemGrey6.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 16, offset: Offset(0, 6))],
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 8, offset: Offset(0, 6))],
                         ),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(10),
                               child: MobileScanner(controller: _scannerController, fit: BoxFit.cover, onDetect: _handleScan),
                             ),
                             // 四角高亮装饰
                             Positioned.fill(child: CustomPaint(painter: _CornerDecorationPainter())),
 
+                            // 美化的掃描模式切換按鈕
                             Positioned(
-                              top: 14.0,
-                              left: 250.0,
-                              child: CupertinoButton(
-                                padding: const EdgeInsets.all(8.0),
-                                color: CupertinoColors.systemYellow.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(00.0),
-                                onPressed: () => _scannerController.switchCamera(),
-                                child:
-                                    scan_mode == "QRCode"
-                                        ? Text('QRCode', style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: CupertinoColors.black))
-                                        : Text('BarCode', style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04, color: CupertinoColors.black)),
+                              top: 12.0,
+                              right: 16.0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors:
+                                        scan_mode == "QRCode"
+                                            ? [CupertinoColors.systemBlue, CupertinoColors.systemBlue.darkColor]
+                                            : [CupertinoColors.systemGreen, CupertinoColors.activeGreen],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (scan_mode == "QRCode" ? CupertinoColors.systemBlue : CupertinoColors.systemGreen).withOpacity(0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: CupertinoButton(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                  color: const Color.fromRGBO(0, 0, 0, 0), // 透明色
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  minSize: 0,
+                                  onPressed: () {
+                                    setState(() {
+                                      scan_mode = scan_mode == "QRCode" ? "BarCode" : "QRCode";
+                                    });
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(scan_mode == "QRCode" ? CupertinoIcons.qrcode : CupertinoIcons.barcode, color: CupertinoColors.white, size: 18),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        scan_mode == "QRCode" ? 'QR Code' : 'Bar Code',
+                                        style: TextStyle(
+                                          fontSize: MediaQuery.of(context).size.width * 0.035,
+                                          color: CupertinoColors.white,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // 相機切換按鈕
+                            Positioned(
+                              top: 12.0,
+                              left: 16.0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: CupertinoColors.systemGrey.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(18.0),
+                                  boxShadow: [BoxShadow(color: CupertinoColors.black.withOpacity(0.2), blurRadius: 6, offset: const Offset(0, 2))],
+                                ),
+                                child: CupertinoButton(
+                                  padding: const EdgeInsets.all(8.0),
+                                  color: const Color.fromRGBO(0, 0, 0, 0),
+                                  borderRadius: BorderRadius.circular(18.0),
+                                  minSize: 0,
+                                  onPressed: () => _scannerController.switchCamera(),
+                                  child: const Icon(CupertinoIcons.camera_rotate, color: CupertinoColors.white, size: 20),
+                                ),
                               ),
                             ),
                           ],
@@ -521,7 +576,7 @@ class _CornerDecorationPainter extends CustomPainter {
           ..strokeWidth = 4
           ..style = PaintingStyle.stroke;
     const double cornerLen = 28;
-    const double radius = 20;
+    const double radius = 10;
     // 左上
     canvas.drawArc(Rect.fromLTWH(0, 0, radius * 2, radius * 2), 3.14, 1.57, false, paint);
     canvas.drawLine(Offset(0, radius), Offset(0, cornerLen), paint);
