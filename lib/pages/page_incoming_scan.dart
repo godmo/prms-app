@@ -469,33 +469,94 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
 
   // 构建MQTT推送按钮
   Widget _buildMqttPushButton() {
+    final bool isDisabled = _isPushing || code1.isEmpty || code2.isEmpty || code3.isEmpty;
+
     return Container(
       width: double.infinity,
+      height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(colors: [Color(0xFF1E90FF), Color(0xFF4169E1)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        boxShadow: [BoxShadow(color: const Color(0xFF1E90FF).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+        gradient:
+            isDisabled
+                ? LinearGradient(
+                  colors: [CupertinoColors.systemGrey5.withOpacity(0.8), CupertinoColors.systemGrey4.withOpacity(0.6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                : const LinearGradient(
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2), Color(0xFF667EEA)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.0, 0.5, 1.0],
+                ),
+        boxShadow:
+            isDisabled
+                ? [BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                : [
+                  BoxShadow(color: const Color(0xFF667EEA).withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: 2),
+                  BoxShadow(color: CupertinoColors.white.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, -2), spreadRadius: 0),
+                ],
+        border:
+            isDisabled
+                ? Border.all(color: CupertinoColors.systemGrey4.withOpacity(0.3), width: 1)
+                : Border.all(color: CupertinoColors.white.withOpacity(0.2), width: 1.5),
       ),
       child: CupertinoButton(
-        onPressed: _isPushing ? null : _pushDataToMqtt,
-        child:
-            _isPushing
-                ? const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CupertinoActivityIndicator(color: CupertinoColors.white),
-                    SizedBox(width: 12),
-                    Text('Pushing...', style: TextStyle(color: CupertinoColors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                  ],
-                )
-                : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(CupertinoIcons.cloud_upload, color: CupertinoColors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text('Send To PC', style: TextStyle(color: CupertinoColors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                  ],
-                ),
+        padding: EdgeInsets.zero,
+        borderRadius: BorderRadius.circular(18),
+        onPressed: isDisabled ? null : _pushDataToMqtt,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child:
+              _isPushing
+                  ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CupertinoActivityIndicator(color: CupertinoColors.white.withOpacity(0.9), radius: 12),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Pushing...',
+                        style: TextStyle(color: CupertinoColors.white.withOpacity(0.9), fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                      ),
+                    ],
+                  )
+                  : Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(0),
+
+                        child: Icon(CupertinoIcons.cloud_upload_fill, color: isDisabled ? CupertinoColors.systemGrey2 : CupertinoColors.white, size: 46),
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Send To PC',
+                              style: TextStyle(
+                                color: isDisabled ? CupertinoColors.systemGrey2 : CupertinoColors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.3,
+                                height: 1.0,
+                              ),
+                            ),
+
+                            //const SizedBox(height: 2),
+                          ],
+                        ),
+                      ),
+                      if (!isDisabled && !_isPushing)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(color: CupertinoColors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                          child: Icon(CupertinoIcons.arrow_right, color: CupertinoColors.white.withOpacity(0.9), size: 24),
+                        ),
+                    ],
+                  ),
+        ),
       ),
     );
   }
@@ -519,7 +580,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
       final message = "$code1\$$code2\$$code3";
       final success = await MqttService().publishAndWaitAck(topic, message);
       if (success) {
-        _showResultDialog('Success', 'Send data successfully!', CupertinoColors.systemGreen);
+        _showResultDialog('Success', 'Codes sent to PC', CupertinoColors.systemGreen);
       } else {
         _showResultDialog('Failed', 'Failed to send data to PC. Please try again.', CupertinoColors.systemRed);
       }
