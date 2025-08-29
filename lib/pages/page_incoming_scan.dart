@@ -68,8 +68,59 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
               Container(
                 height: 40,
                 color: CupertinoColors.systemGrey5,
-                alignment: Alignment.center,
-                child: const Text('PC List', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 40), // 平衡左側空間
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'PC List',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            color: CupertinoColors.black,
+                            shadows: [Shadow(color: CupertinoColors.systemGrey3.withOpacity(0.3), offset: const Offset(0, 1), blurRadius: 2)],
+                          ),
+                        ),
+                      ],
+                    ),
+                    CupertinoButton(
+                      padding: const EdgeInsets.all(8),
+                      minSize: 0,
+                      onPressed: () {
+                        // 顯示確認對話框
+                        showCupertinoDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return CupertinoAlertDialog(
+                              title: const Text('Clear PC List'),
+                              content: const Text('Are you sure you want to clear all PC records?'),
+                              actions: [
+                                CupertinoDialogAction(
+                                  child: const Text('Cancel'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                CupertinoDialogAction(
+                                  isDestructiveAction: true,
+                                  child: const Text('Clear'),
+                                  onPressed: () {
+                                    context.read<SelectedPCProvider>().clearAll();
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: Icon(CupertinoIcons.clear_fill, color: CupertinoColors.systemRed, size: 20),
+                    ),
+                  ],
+                ),
               ),
               Expanded(
                 child: CupertinoPicker(
@@ -262,7 +313,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
                     },
                     child: Center(
                       child: Container(
-                        width: MediaQuery.of(context).size.width * 0.85,
+                        width: MediaQuery.of(context).size.width * 0.87,
                         height: MediaQuery.of(context).size.height * 0.28,
                         decoration: BoxDecoration(
                           color: CupertinoColors.systemGrey6.withOpacity(0.85),
@@ -340,51 +391,105 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: screenWidth * 0.06),
+                    padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: screenWidth * 0.06),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: CupertinoColors.activeGreen.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: CupertinoColors.systemGrey4, width: 1),
+                        color: CupertinoColors.systemBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: CupertinoColors.systemGrey5, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4), spreadRadius: 1),
+                        ],
                       ),
                       child: Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Scan Results', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: CupertinoColors.black)),
-                              if (code1.isNotEmpty || code2.isNotEmpty || code3.isNotEmpty)
-                                CupertinoButton(
-                                  padding: const EdgeInsets.all(4),
-                                  minSize: 0,
-                                  onPressed: () {
-                                    setState(() {
-                                      code1 = '';
-                                      code2 = '';
-                                      code3 = '';
-                                      _clearBuffer(1);
-                                      _clearBuffer(2);
-                                      _clearBuffer(3);
-                                    });
-                                  },
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(CupertinoIcons.clear_circled_solid, color: CupertinoColors.systemRed, size: 20),
-                                      const SizedBox(width: 4),
-                                      Text('Clear All', style: TextStyle(color: CupertinoColors.systemRed, fontSize: 14, fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
+                          // Professional Header Section
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: CupertinoColors.systemGrey6.withOpacity(0.5),
+                              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                              border: Border(bottom: BorderSide(color: CupertinoColors.systemGrey4, width: 0.5)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(color: CupertinoColors.activeBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                      child: Icon(CupertinoIcons.barcode_viewfinder, color: CupertinoColors.activeBlue, size: 18),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Scan Results',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: CupertinoColors.black,
+                                            letterSpacing: 0.3,
+                                            shadows: [Shadow(color: CupertinoColors.systemGrey3.withOpacity(0.3), offset: Offset(0, 1), blurRadius: 2)],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Barcode List',
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: CupertinoColors.systemBlue, letterSpacing: 0.2),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                            ],
+                                if (code1.isNotEmpty || code2.isNotEmpty || code3.isNotEmpty)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: CupertinoColors.systemRed.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: CupertinoColors.systemRed.withOpacity(0.3), width: 1),
+                                    ),
+                                    child: CupertinoButton(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      minSize: 0,
+                                      onPressed: () {
+                                        setState(() {
+                                          code1 = '';
+                                          code2 = '';
+                                          code3 = '';
+                                          _clearBuffer(1);
+                                          _clearBuffer(2);
+                                          _clearBuffer(3);
+                                        });
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(CupertinoIcons.clear_fill, color: CupertinoColors.systemRed, size: 16),
+                                          const SizedBox(width: 6),
+                                          Text('Clear All', style: TextStyle(color: CupertinoColors.systemRed, fontSize: 13, fontWeight: FontWeight.w600)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          _buildCodeRow('Code 1', code1),
-                          const SizedBox(height: 8),
-                          _buildCodeRow('Code 2', code2),
-                          const SizedBox(height: 8),
-                          _buildCodeRow('Code 3', code3),
+                          // Content Section with original code rows
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              children: [
+                                _buildCodeRow('Code 1', code1),
+                                const SizedBox(height: 6),
+                                _buildCodeRow('Code 2', code2),
+                                const SizedBox(height: 6),
+                                _buildCodeRow('Code 3', code3),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -471,7 +576,7 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('$label:', style: const TextStyle(color: CupertinoColors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+        Text('$label：', style: const TextStyle(color: CupertinoColors.black, fontSize: 16, fontWeight: FontWeight.w500)),
         const SizedBox(width: 12),
         Expanded(child: Text(value, style: const TextStyle(color: CupertinoColors.activeBlue, fontSize: 16, fontWeight: FontWeight.w600))),
         // 加上 CupertinoIcons ， 如果是 value 是空则显示警告图标 ， 如果是正常的value 则显示 check 图标
@@ -616,7 +721,15 @@ class _PageIncomingScanState extends State<PageIncomingScan> {
       final message = "$code1\$$code2\$$code3";
       final success = await MqttService().publishAndWaitAck(topic, message);
       if (success) {
-        _showResultDialog('Success', 'Codes sent to PC', CupertinoColors.systemGreen);
+        _showResultDialog('Success', 'Data sent to PC', CupertinoColors.systemGreen);
+        setState(() {
+          code1 = '';
+          code2 = '';
+          code3 = '';
+          _clearBuffer(1);
+          _clearBuffer(2);
+          _clearBuffer(3);
+        });
       } else {
         _showResultDialog('Failed', 'Failed to send data to PC. Please try again.', CupertinoColors.systemRed);
       }

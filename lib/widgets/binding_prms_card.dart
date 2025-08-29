@@ -8,8 +8,8 @@ library;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-// 获取网络信息的插件
-import 'package:network_info_plus/network_info_plus.dart';
+// 获取应用版本信息的插件
+import 'package:package_info_plus/package_info_plus.dart';
 // 各功能页面
 import 'package:prmsapp/pages/page_clean_flow.dart'; // 清洁流程页面
 import 'package:prmsapp/pages/page_cumsume.dart'; // 消耗页面
@@ -18,9 +18,12 @@ import 'package:prmsapp/pages/page_move_in_rack.dart'; // 移入机架页面
 import 'package:prmsapp/pages/page_move_out_rack.dart'; // 移出机架页面
 import 'package:prmsapp/pages/page_put_on_flow.dart'; // 上机流程页面
 import 'package:prmsapp/pages/page_take_off_flow.dart'; // 下机流程页面
+// 全域狀態管理
+import 'package:prmsapp/providers/wifi_provider.dart'; // WiFi Provider
 // 服务类
 import 'package:prmsapp/services/prms_api.dart'; // PRMS API服务
-import 'package:prmsapp/services/wifi_service.dart'; // WiFi服务
+// 引入 Provider
+import 'package:provider/provider.dart';
 
 /// PRMS 主功能卡片组件
 /// 展示所有光阻液相关操作按钮
@@ -29,6 +32,8 @@ class BindingPrmsCard extends StatefulWidget {
 
   @override
   State<BindingPrmsCard> createState() => _BindingPCCardState();
+
+  
 }
 
 /// 绑定卡片的状态类，负责渲染所有按钮和功能
@@ -36,6 +41,12 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
   // 是否被点击（预留扩展）
   bool isTapped = false;
 
+  @override
+  void async @override
+  initState() {
+    super.initState();
+    _loadAppVersion();
+  }
   @override
   Widget build(BuildContext context) {
     // 获取屏幕宽度用于自适应布局，确保在不同设备上都能正确显示
@@ -168,17 +179,17 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                     Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageIncomingScan()));
                   },
                 ),
-                SizedBox(height: 6), // 按钮间距
-                // 取得目前的网路基地台 SSID - WiFi信息查询功能按钮
-                _buildCupertinoButton(
-                  context,
-                  icon: CupertinoIcons.refresh_circled, // WiFi信息查询图标
-                  label: '  Get WiFi SSID',
-                  onPressed: () {
-                    // 获取并显示当前连接的WiFi网络信息
-                    _showWifiSSID(context);
-                  },
-                ),
+                // SizedBox(height: 6), // 按钮间距
+                // // 取得目前的网路基地台 SSID - WiFi信息查询功能按钮
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.refresh_circled, // WiFi信息查询图标
+                //   label: '  Get WiFi SSID',
+                //   onPressed: () {
+                //     // 获取并显示当前连接的WiFi网络信息
+                //     _showWifiSSID(context);
+                //   },
+                // ),
                 SizedBox(height: 6), // 按钮间距
                 // 检查App版本 - 版本信息查询功能按钮
                 _buildCupertinoButton(
@@ -190,6 +201,17 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                     _showVersionDialog(context);
                   },
                 ),
+                // SizedBox(height: 6), // 按钮间距
+                // // WiFi 白名單管理 - 管理允許的 WiFi 網路
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.lock_shield, // WiFi 安全管理圖標
+                //   label: '  WiFi Whitelist',
+                //   onPressed: () {
+                //     // 跳轉到 WiFi 白名單管理頁面
+                //     Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const WiFiWhitelistManagerPage()));
+                //   },
+                // ),
                 SizedBox(height: 6), // 按钮间距
                 // 使用Expanded占据剩余空间，将版权信息推到底部
                 Expanded(child: SizedBox()),
@@ -299,90 +321,26 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
     );
   }
 
-  /// 显示WiFi SSID信息的异步方法
+  /// 顯示WiFi SSID信息的異步方法
   ///
-  /// 功能说明：
-  /// 1. 使用原生iOS方法获取WiFi网络信息
-  /// 2. 处理各种错误情况（权限拒绝、无网络接口等）
-  /// 3. 尝试获取补充信息如IP地址
-  /// 4. 以对话框形式显示结果
+  /// 功能說明：
+  /// 1. 使用 WiFiProvider 中的白名單檢查方法來獲取 WiFi 信息
+  /// 2. 自動檢查 SSID 是否在白名單中
+  /// 3. 如果不在白名單中，顯示禁止使用的通知
+  /// 4. 如果在白名單中，顯示正常的 WiFi 信息
   ///
-  /// 参数：
-  /// - [context]: 用于显示对话框的构建上下文
+  /// 參數：
+  /// - [context]: 用於顯示對話框的構建上下文
   void _showWifiSSID(BuildContext context) async {
     try {
-      // 注释的代码：显示加载指示器
-      // if (context.mounted) {
-      //   _showLoadingDialog(context);
-      // }
+      // 獲取 WiFi Provider
+      final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
 
-      // 使用原生iOS方法获取WiFi信息
-      final wifiResult = await WifiService.getWifiSSIDNative();
-
-      // 注释的代码：关闭加载对话框
-      // if (context.mounted) {
-      //   Navigator.of(context).pop();
-      // }
-
-      String displayText = '';
-
-      // 处理成功获取WiFi信息的情况
-      if (wifiResult['success'] == true) {
-        final ssid = wifiResult['ssid'] as String? ?? '';
-        final bssid = wifiResult['bssid'] as String? ?? '';
-
-        if (ssid.isNotEmpty) {
-          // 移除SSID中的引号（如果有的话）
-          String cleanWifiName = ssid.replaceAll('"', '');
-          displayText = 'WiFi SSID: $cleanWifiName';
-          // 如果有BSSID信息则添加显示
-          if (bssid.isNotEmpty) {
-            displayText += '\nBSSID: $bssid';
-          }
-
-          // 尝试获取IP地址作为补充信息（使用原来的方法）
-          try {
-            final info = NetworkInfo();
-            final wifiIP = await info.getWifiIP();
-            if (wifiIP != null && wifiIP.isNotEmpty) {
-              displayText += '\nIP Address: $wifiIP';
-            }
-          } catch (e) {
-            // IP获取失败不影响主要功能，只打印调试信息
-            print('Failed to get IP: $e');
-          }
-        } else {
-          // 无WiFi连接或信息不可用的提示
-          displayText = 'No WiFi connection detected or WiFi information not available.\n\nNote: On iOS simulators, WiFi information is always unavailable.';
-        }
-      } else {
-        // 处理各种错误情况
-        final errorCode = wifiResult['code'] as String?;
-        final errorMessage = wifiResult['error'] as String? ?? 'Unknown error';
-
-        // 根据错误代码提供具体的解决方案
-        if (errorCode == 'PERMISSION_DENIED') {
-          displayText =
-              'Location permission is required to get WiFi information.\n\nPlease grant location permission in Settings:\nSettings > Privacy & Security > Location Services > PRMS App';
-        } else if (errorCode == 'NO_INTERFACES') {
-          displayText = 'No network interfaces found.\n\nPlease ensure your device is connected to WiFi and try again.';
-        } else {
-          displayText =
-              'Failed to get WiFi information: $errorMessage\n\nPlease ensure:\n• Location services are enabled\n• App has location permission\n• Device is connected to WiFi\n• Local network access is granted (iOS 14+)';
-        }
-      }
-
-      // 确保context仍然有效后显示结果对话框
-      if (context.mounted) {
-        _showSSIDDialog(context, 'WiFi Information', displayText);
-      }
+      // 🔒 使用 WiFiProvider 的白名單檢查方法
+      // 這會自動檢查 SSID 是否在白名單中，並顯示相應的對話框
+      await wifiProvider.checkWiFiWithWhitelist(context);
     } catch (e) {
-      // 异常处理：确保关闭可能存在的加载对话框
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
-
-      // 显示异常错误信息
+      // 異常處理：如果 WiFiProvider 方法失敗，顯示備用錯誤信息
       if (context.mounted) {
         _showSSIDDialog(
           context,
@@ -431,7 +389,7 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
   ///
   /// 功能说明：
   /// 1. 创建一个包含版本检查功能的对话框
-  /// 2. 使用FutureBuilder异步获取服务器版本信息
+  /// 2. 使用FutureBuilder异步获取服务器版本信息和本地版本信息
   /// 3. 显示本地版本、服务器版本和连接状态
   /// 4. 根据连接状态显示不同的UI反馈
   ///
@@ -445,8 +403,8 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
           // 对话框标题
           title: const Text('App Version', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.black)),
           // 对话框内容：使用FutureBuilder异步加载版本信息
-          content: FutureBuilder<Map<String, dynamic>?>(
-            future: PrmsApi.getAppVersion(), // 调用API获取版本信息
+          content: FutureBuilder<Map<String, dynamic>>(
+            future: _getVersionInfo(), // 获取版本信息（包括本地和服务器版本）
             builder: (context, snapshot) {
               // 显示加载状态
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -461,10 +419,12 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                 );
               } else {
                 // 处理加载完成后的数据
-                final versionData = snapshot.data;
-                final isConnected = versionData?['success'] == true; // 服务器连接状态
-                final serverVersion = versionData?['version'] ?? 'Unknown'; // 服务器版本
-                final errorMessage = versionData?['error']; // 错误信息
+                final versionInfo = snapshot.data ?? {};
+                final localVersion = versionInfo['localVersion'] ?? 'Unknown'; // 本地版本
+                final serverVersionData = versionInfo['serverVersion'] as Map<String, dynamic>?;
+                final isConnected = serverVersionData?['success'] == true; // 服务器连接状态
+                final serverVersion = serverVersionData?['version'] ?? 'Unknown'; // 服务器版本
+                final errorMessage = serverVersionData?['error']; // 错误信息
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -473,8 +433,8 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
                     // 应用名称
                     const Text('PRMS App', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
-                    // 本地版本信息（硬编码）
-                    const Text('Local Version: 1.0.0+1', style: TextStyle(fontSize: 14, color: CupertinoColors.systemGrey)),
+                    // 本地版本信息（动态获取）
+                    Text('Local Version: $localVersion', style: const TextStyle(fontSize: 14, color: CupertinoColors.systemGrey)),
                     const SizedBox(height: 8),
                     // 服务器版本信息（动态获取）
                     Text(
@@ -517,5 +477,51 @@ class _BindingPCCardState extends State<BindingPrmsCard> {
         );
       },
     );
+  }
+
+  /// 获取版本信息（本地版本和服务器版本）
+  ///
+  /// 返回包含本地版本和服务器版本信息的Map
+  Future<Map<String, dynamic>> _getVersionInfo() async {
+    String localVersion = 'Unknown';
+    Map<String, dynamic>? serverVersionData;
+
+    try {
+      // 尝试获取本地版本信息
+      final packageInfo = await PackageInfo.fromPlatform();
+
+      // 检查版本和构建号是否为空
+      final version = packageInfo.version;
+      final buildNumber = packageInfo.buildNumber;
+
+      if (version.isNotEmpty && buildNumber.isNotEmpty) {
+        localVersion = '$version+$buildNumber';
+      } else if (version.isNotEmpty) {
+        localVersion = version;
+      } else {
+        localVersion = 'Unknown (Empty version)';
+      }
+    } catch (e) {
+      print('获取PackageInfo失败: $e');
+      // 如果是 MissingPluginException，说明插件没有正确注册
+      if (e.toString().contains('MissingPluginException')) {
+        localVersion = '1.0.2+1 (Plugin error)';
+      } else {
+        localVersion = '1.0.2+1 (Error: ${e.runtimeType})';
+      }
+    }
+
+    try {
+      // 获取服务器版本信息
+      serverVersionData = await PrmsApi.getAppVersion();
+    } catch (e) {
+      print('获取服务器版本失败: $e');
+      serverVersionData = {'success': false, 'error': 'Failed to fetch server version: $e'};
+    }
+
+    return {
+      'localVersion': localVersion,
+      'serverVersion': serverVersionData ?? {'success': false, 'error': 'Server version data is null'},
+    };
   }
 }

@@ -5,6 +5,7 @@ import 'package:prmsapp/pages/main_page.dart';
 import 'package:prmsapp/pages/splash_screen.dart';
 import 'package:prmsapp/providers/auth_provider.dart';
 import 'package:prmsapp/providers/selected_pc_provider.dart';
+import 'package:prmsapp/providers/wifi_provider.dart';
 import 'package:prmsapp/services/config_service.dart';
 import 'package:provider/provider.dart';
 
@@ -49,7 +50,11 @@ class PrmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => AuthProvider()), ChangeNotifierProvider(create: (context) => SelectedPCProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => SelectedPCProvider()),
+        ChangeNotifierProvider(create: (context) => WiFiProvider()),
+      ],
       child: CupertinoApp(debugShowCheckedModeBanner: false, theme: const CupertinoThemeData(brightness: Brightness.light), home: const SplashToMain()),
     );
   }
