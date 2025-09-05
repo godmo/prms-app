@@ -11,16 +11,16 @@ import 'package:prmsapp/widgets/global_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-class PageIncomingScan extends StatefulWidget {
+class PaggMaterialImportScan extends StatefulWidget {
   final GlobalKey<GlobalNavBarState>? navBarKey;
   final void Function({bool fromBindingCard})? onQRScanTab;
-  const PageIncomingScan({super.key, this.navBarKey, this.onQRScanTab});
+  const PaggMaterialImportScan({super.key, this.navBarKey, this.onQRScanTab});
 
   @override
-  State<PageIncomingScan> createState() => _PageIncomingScanState();
+  State<PaggMaterialImportScan> createState() => _PaggMaterialImportScanState();
 }
 
-class _PageIncomingScanState extends State<PageIncomingScan> {
+class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
   /// 控制相機掃描功能的控制器
   final MobileScannerController _scannerController = MobileScannerController(
     autoStart: false,

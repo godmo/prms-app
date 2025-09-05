@@ -98,22 +98,20 @@ class WiFiProvider extends ChangeNotifier {
   /// 從 SharedPreferences 載入 WiFi 白名單
   Future<void> _loadWifiWhitelist() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final whitelistJson = prefs.getStringList(_wifiWhitelistKey) ?? [];
-      _wifiWhitelist = whitelistJson;
+      //final prefs = await SharedPreferences.getInstance();
+      //final whitelistJson = prefs.getStringList(_wifiWhitelistKey) ?? [];
+      //_wifiWhitelist = whitelistJson;
 
       // 如果白名單為空，設置預設白名單
-      if (_wifiWhitelist.isEmpty) {
-        _wifiWhitelist = [
-          'VSMC_WiFi',
-          'VSMC_Guest',
-          'VIS_Lab',
-          'TestWiFi',
-
-          // 添加更多預設的 WiFi SSID
-        ];
-        await _saveWifiWhitelist();
-      }
+      //if (_wifiWhitelist.isEmpty) {
+      _wifiWhitelist = [
+        'VIS-Guest',
+        'VSMC-Guest',
+        '慧鴻\'s Galaxy Z Fold3 5G',
+        // 添加更多預設的 WiFi SSID
+      ];
+      await _saveWifiWhitelist();
+      //}
 
       notifyListeners();
     } catch (e) {
@@ -428,6 +426,28 @@ class WiFiProvider extends ChangeNotifier {
     return {'success': result['success'] ?? false, 'whitelisted': false, 'displayText': result['displayText'] ?? 'Failed to get WiFi information'};
   }
 
+  Future<bool> isWiFiWithWhitelist(BuildContext context) async {
+    final result = await fetchAndUpdateWiFiInfo();
+
+    if (result['success'] == true && context.mounted) {
+      final cleanWifiName = result['cleanWifiName'] as String?;
+
+      if (cleanWifiName != null && cleanWifiName.isNotEmpty) {
+        final isWhitelisted = isSSIDInWhitelist(cleanWifiName);
+
+        if (!isWhitelisted) {
+          // WiFi 不在白名單中，顯示禁止使用的通知
+          _showWiFiBlockedDialog(context, cleanWifiName);
+
+          return false;
+        } else {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /// 顯示 WiFi 被阻擋的警告對話框
   ///
   /// 當 WiFi SSID 不在白名單中時顯示此對話框
@@ -436,13 +456,17 @@ class WiFiProvider extends ChangeNotifier {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('🚫 禁止使用', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.systemRed)),
+          title: const Text('🚫 Not Allowe', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.systemRed)),
           content: Padding(
             padding: const EdgeInsets.only(top: 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('您當前連接的 WiFi 網路不在允許使用的白名單中：', style: const TextStyle(fontSize: 14, color: CupertinoColors.black), textAlign: TextAlign.center),
+                Text(
+                  'The WiFi network you are currently connected to is not in the allowed whitelist:',
+                  style: const TextStyle(fontSize: 14, color: CupertinoColors.black),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -455,12 +479,12 @@ class WiFiProvider extends ChangeNotifier {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  '請聯繫系統管理員將此網路添加到白名單，或切換到允許的 WiFi 網路。',
+                  'Please contact the system administrator to add this network to the whitelist, or switch to an allowed WiFi network.',
                   style: TextStyle(fontSize: 14, color: CupertinoColors.systemGrey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                const Text('允許的網路：', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: CupertinoColors.systemGrey2)),
+                const Text('Allowed Networks:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: CupertinoColors.systemGrey2)),
                 Text(
                   _wifiWhitelist.isNotEmpty ? _wifiWhitelist.join(', ') : '無',
                   style: const TextStyle(fontSize: 12, color: CupertinoColors.systemGrey2),
@@ -471,21 +495,21 @@ class WiFiProvider extends ChangeNotifier {
           ),
           actions: [
             CupertinoDialogAction(
-              child: const Text('了解', style: TextStyle(color: CupertinoColors.systemRed, fontWeight: FontWeight.w600)),
+              child: const Text('I See', style: TextStyle(color: CupertinoColors.systemRed, fontWeight: FontWeight.w600)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            CupertinoDialogAction(
-              child: const Text('添加到白名單', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await addToWhitelist(ssid);
-                if (context.mounted) {
-                  _showWiFiDialog(context, '✅ 已添加', 'WiFi "$ssid" 已成功添加到白名單中！');
-                }
-              },
-            ),
+            // CupertinoDialogAction(
+            //   child: const Text('添加到白名單', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w600)),
+            //   onPressed: () async {
+            //     Navigator.of(context).pop();
+            //     await addToWhitelist(ssid);
+            //     if (context.mounted) {
+            //       _showWiFiDialog(context, '✅ 已添加', 'WiFi "$ssid" 已成功添加到白名單中！');
+            //     }
+            //   },
+            // ),
           ],
         );
       },

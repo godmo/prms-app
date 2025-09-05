@@ -13,7 +13,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 // 各功能页面
 import 'package:prmsapp/pages/page_clean_flow.dart'; // 清洁流程页面
 import 'package:prmsapp/pages/page_cumsume.dart'; // 消耗页面
-import 'package:prmsapp/pages/page_incoming_scan.dart'; // 进货扫描页面
+import 'package:prmsapp/pages/page_material_importin_scan.dart'; // 进货扫描页面
 import 'package:prmsapp/pages/page_move_in_rack.dart'; // 移入机架页面
 import 'package:prmsapp/pages/page_move_out_rack.dart'; // 移出机架页面
 import 'package:prmsapp/pages/page_put_on_flow.dart'; // 上机流程页面
@@ -83,7 +83,6 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
 
           // 执行白名单检查，这会更新 WiFi 信息
           await wifiProvider.checkWiFiWithWhitelist(context);
-
           // 更新状态显示 SSID
           if (mounted) {
             setState(() {
@@ -148,9 +147,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icon: CupertinoIcons.arrow_2_squarepath, // 交换/置换的合适图标
                   label: ' Consume',
-                  onPressed: () {
-                    // 跳转到消耗页面，处理光阻液的消耗记录
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageCunsume()));
+                  onPressed: () async {
+                    // 先檢查 WiFi 是否在白名單中
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageCunsume()));
+                    }
+                    // 如果 WiFi 不在白名單中，isWiFiWithWhitelist 方法已經會顯示阻擋對話框
                   },
                 ),
                 SizedBox(height: 6), // 按钮间距
@@ -159,9 +165,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icon: CupertinoIcons.tray_arrow_down, // 更贴合"放进柜子"功能的图标
                   label: ' Move In Rack',
-                  onPressed: () {
+                  onPressed: () async {
                     // 跳转到移入机架页面，处理将光阻液放入防爆柜的流程
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveInRack()));
+                    // 先檢查 WiFi 是否在白名單中
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveInRack()));
+                    }
                   },
                 ),
                 SizedBox(height: 6), // 按钮间距
@@ -170,9 +183,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
                   label: ' Move Out Rack',
-                  onPressed: () {
+                  onPressed: () async {
                     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRack()));
+
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRack()));
+                    }
                   },
                 ),
                 SizedBox(height: 6), // 按钮间距
@@ -181,9 +201,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icons: [], // 不使用系统图标，使用自定义图片
                   label: 'Put On Flow',
-                  onPressed: () {
+                  onPressed: () async {
                     // 跳转到上机流程页面，处理光阻液上机的完整流程
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PagePutOnFlow()));
+
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PagePutOnFlow()));
+                    }
                   },
                   // 使用自定义图片作为按钮图标
                   imageWidget: Padding(
@@ -202,9 +229,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icons: [], // 不使用系统图标，使用自定义图片
                   label: 'Take Off Flow',
-                  onPressed: () {
+                  onPressed: () async {
                     // 跳转到下机流程页面，处理光阻液下机的完整流程
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageTakeOffFlow()));
+
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageTakeOffFlow()));
+                    }
                   },
                   // 使用自定义图片作为按钮图标
                   imageWidget: Padding(
@@ -218,9 +252,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                   context,
                   icon: CupertinoIcons.refresh_circled, // 更贴合"清除/重置"用途的图标
                   label: '  Clean Flow',
-                  onPressed: () {
+                  onPressed: () async {
                     // 跳转到清洁流程页面，处理设备清洁和状态重置
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageCleanFlow()));
+
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageCleanFlow()));
+                    }
                   },
                 ),
                 SizedBox(height: 6), // 按钮间距
@@ -228,10 +269,16 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                 _buildCupertinoButton(
                   context,
                   icon: CupertinoIcons.camera_viewfinder, // 更贴合"清除/重置"用途的图标
-                  label: '  Incoming Scan',
-                  onPressed: () {
+                  label: '  Material Import',
+                  onPressed: () async {
                     // 跳转到清洁流程页面，处理设备清洁和状态重置
-                    Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageIncomingScan()));
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PaggMaterialImportScan()));
+                    }
                   },
                 ),
                 // SizedBox(height: 6), // 按钮间距
