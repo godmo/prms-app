@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 
 class ApiConfig {
   // 基础配置
-  static const String _baseProxyUrl = 'https://vismobile.vis.com.tw:3002';
-  static const String _baseApiUrl = 'http://10.29.11.237:5098';
+  static const String _baseProxyUrl = 'https://10.92.144.29:80';
+  static const String _baseApiUrl = 'http://10.92.144.25:5098';
 
   // API 端点
   static String get proxyPostUrl => '$_baseProxyUrl/api/proxy/post';
@@ -26,7 +26,7 @@ class ApiConfig {
   // 可以根据环境切换配置
   static String getProxyUrl({bool useLocalhost = false}) {
     if (useLocalhost) {
-      return 'https://localhost:3002/api/proxy/post';
+      return 'https://10.92.144.29:80/api/proxy/post';
     }
     return proxyPostUrl;
   }

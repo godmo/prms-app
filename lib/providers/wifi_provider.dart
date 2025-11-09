@@ -108,6 +108,7 @@ class WiFiProvider extends ChangeNotifier {
         'VIS-Guest',
         'VSMC-Guest',
         '慧鴻\'s Galaxy Z Fold3 5G',
+        'CanredEva_6G',
         // 添加更多預設的 WiFi SSID
       ];
       await _saveWifiWhitelist();

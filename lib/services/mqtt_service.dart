@@ -13,7 +13,7 @@
 
 //   Future<void> connect() async {
 //     // 假資料，請稍後自行修改
-//     const String server = '10.125.1.104';
+//     const String server = '10.92.144.29';
 //     const int port = 1883;
 //     const String clientId = 'prms_client';
 

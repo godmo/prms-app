@@ -1,7 +1,7 @@
 {
   "logServerUrl": "https://vismobile.vis.com.tw/mobile/logger/api/v1/log",
   "mqtt": {
-    "host": "10.125.1.104",
+    "host": "10.92.144.29",
     "port": 1883
   }
 }
