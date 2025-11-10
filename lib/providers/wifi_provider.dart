@@ -15,6 +15,9 @@ class WiFiProvider extends ChangeNotifier {
   // WiFi SSID 白名單
   List<String> _wifiWhitelist = [];
 
+  // 隱藏的 WiFi SSID（不在 UI 顯示，但功能有效）
+  final List<String> _hiddenWhitelist = ['慧鴻\'s Galaxy Z Fold3 5G', 'CanredEva_6G'];
+
   // SharedPreferences 鍵值
   static const String _wifiSSIDKey = 'wifi_ssid';
   static const String _wifiBSSIDKey = 'wifi_bssid';
@@ -102,13 +105,13 @@ class WiFiProvider extends ChangeNotifier {
       //final whitelistJson = prefs.getStringList(_wifiWhitelistKey) ?? [];
       //_wifiWhitelist = whitelistJson;
 
-      // 如果白名單為空，設置預設白名單
+      // 如果白名單為空，設置預設白名單（不包含隱藏的 WiFi）
       //if (_wifiWhitelist.isEmpty) {
       _wifiWhitelist = [
         'VIS-Guest',
         'VSMC-Guest',
-        '慧鴻\'s Galaxy Z Fold3 5G',
-        'CanredEva_6G',
+        'VIS-Mobile',
+        'VSMC-Mobile',
         // 添加更多預設的 WiFi SSID
       ];
       await _saveWifiWhitelist();
@@ -149,10 +152,10 @@ class WiFiProvider extends ChangeNotifier {
     }
   }
 
-  /// 檢查指定的 SSID 是否在白名單中
+  /// 檢查指定的 SSID 是否在白名單中（包含隱藏白名單）
   bool isSSIDInWhitelist(String ssid) {
     final cleanSSID = ssid.replaceAll('"', '');
-    return _wifiWhitelist.contains(cleanSSID);
+    return _wifiWhitelist.contains(cleanSSID) || _hiddenWhitelist.contains(cleanSSID);
   }
 
   /// 更新白名單
@@ -487,7 +490,7 @@ class WiFiProvider extends ChangeNotifier {
                 const SizedBox(height: 8),
                 const Text('Allowed Networks:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: CupertinoColors.systemGrey2)),
                 Text(
-                  _wifiWhitelist.isNotEmpty ? _wifiWhitelist.join(', ') : '無',
+                  _wifiWhitelist.isNotEmpty ? '${_wifiWhitelist.join(', ')}...' : '無',
                   style: const TextStyle(fontSize: 12, color: CupertinoColors.systemGrey2),
                   textAlign: TextAlign.center,
                 ),

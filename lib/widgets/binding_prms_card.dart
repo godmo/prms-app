@@ -42,6 +42,9 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
   // 当前 WiFi SSID
   String currentSSID = 'Loading...';
 
+  // 当前 APP 版本
+  String appVersion = 'Loading...';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,8 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     // 初始化时执行 WiFi 检查
     _performWiFiCheck();
+    // 初始化时获取版本信息
+    _loadAppVersion();
   }
 
   @override
@@ -99,6 +104,31 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
         }
       }
     });
+  }
+
+  /// 加载 APP 版本信息
+  void _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final version = packageInfo.version;
+      // final buildNumber = packageInfo.buildNumber;
+
+      if (mounted) {
+        setState(() {
+          if (version.isNotEmpty) {
+            appVersion = 'v$version';
+          } else {
+            appVersion = 'Unknown';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          appVersion = 'Unknown';
+        });
+      }
+    }
   }
 
   @override
@@ -294,15 +324,15 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                 // ),
                 SizedBox(height: 6), // 按钮间距
                 // 检查App版本 - 版本信息查询功能按钮
-                _buildCupertinoButton(
-                  context,
-                  icon: CupertinoIcons.refresh_circled, // 版本检查图标
-                  label: '  Check App Version',
-                  onPressed: () {
-                    // 弹窗显示应用版本信息和服务器连接状态
-                    _showVersionDialog(context);
-                  },
-                ),
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.refresh_circled, // 版本检查图标
+                //   label: '  Check App Version',
+                //   onPressed: () {
+                //     // 弹窗显示应用版本信息和服务器连接状态
+                //     _showVersionDialog(context);
+                //   },
+                // ),
                 // SizedBox(height: 6), // 按钮间距
                 // // WiFi 白名單管理 - 管理允許的 WiFi 網路
                 // _buildCupertinoButton(
@@ -355,17 +385,33 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                 // 版权信息区域
                 Padding(
                   padding: const EdgeInsets.only(top: 0.0, bottom: 4.0),
-                  child: Text(
-                    'Copyright © 2025 VIS,VSMC. All rights reserved.',
-                    style: TextStyle(
-                      color: CupertinoColors.activeBlue, // 使用活泼的蓝色
-                      fontSize: 10.0, // 小字体
-                      fontWeight: FontWeight.bold, // 粗体
-                      letterSpacing: 0.3, // 字母间距
-                      // 添加文字阴影效果，增强视觉层次
-                      shadows: [Shadow(color: CupertinoColors.systemGrey.withOpacity(0.2), offset: Offset(0, 1), blurRadius: 2)],
-                    ),
-                    textAlign: TextAlign.center, // 居中对齐
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Copyright © 2025 VIS,VSMC. All rights reserved.',
+                        style: TextStyle(
+                          color: CupertinoColors.activeBlue, // 使用活泼的蓝色
+                          fontSize: 10.0, // 小字体
+                          fontWeight: FontWeight.bold, // 粗体
+                          letterSpacing: 0.3, // 字母间距
+                          // 添加文字阴影效果，增强视觉层次
+                          shadows: [Shadow(color: CupertinoColors.systemGrey.withOpacity(0.2), offset: Offset(0, 1), blurRadius: 2)],
+                        ),
+                        textAlign: TextAlign.center, // 居中对齐
+                      ),
+                      const SizedBox(height: 4.0),
+                      Text(
+                        'Version :  $appVersion',
+                        style: TextStyle(
+                          color: CupertinoColors.systemGrey, // 使用灰色
+                          fontSize: 9.0, // 更小字体
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               ],

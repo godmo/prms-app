@@ -47,6 +47,9 @@ class _PageFun1State extends State<PageCunsume> {
 
   bool _isSubmitting = false; // 新增提交状态变量
   final bool _isPaused = false; // 添加暂停状态变量
+  bool _isDisposed = false; // 追蹤 Widget 是否已釋放
+  bool _isProcessing = false; // 防止重複處理掃描
+
   @override
   void initState() {
     super.initState();
@@ -79,125 +82,159 @@ class _PageFun1State extends State<PageCunsume> {
 
   /// 處理掃描結果，支援單次與連續模式，並彈出對話框或更新畫面
   void _handleScan(BarcodeCapture barcodes) async {
+    // 檢查是否已釋放或正在處理
+    if (_isDisposed || !mounted) {
+      debugPrint('Widget disposed or not mounted, ignoring scan');
+      return;
+    }
+
+    // 防止重複處理
+    if (_isProcessing) {
+      debugPrint('Already processing a scan, ignoring');
+      return;
+    }
+
     if (_isPaused) {
       debugPrint('操作已暂停，忽略本次扫描');
       return;
     }
-    // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
-    // final now = DateTime.now();
-    // if (_lastScanTime != null &&
-    //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
-    //   debugPrint('冷卻中，忽略本次掃描');
-    //   return;
-    // }
-    // _lastScanTime = now;
 
-    // // 在單次掃描模式下，如果已經掃描過，則忽略
-    // if (!_isContinuousScanMode && _hasScanned) {
-    //   debugPrint('單次掃描已完成，忽略新的掃描結果');
-    //   return;
-    // }
+    _isProcessing = true; // 開始處理
 
-    for (final barcode in barcodes.barcodes) {
-      if (barcode.rawValue != null) {
-        final scanContent = barcode.rawValue!;
-        debugPrint('掃描結果: $scanContent');
-        if (page_stage == "User") {
-          // 当符合 员工ID 的格式时，才会更新 p_user_id
-          // scanContent 必須是6位數字，
-          if (PrmsDataCheck.isValidUserId(scanContent)) {
-            setState(() {
-              p_user_id = scanContent;
-              page_stage = "Machine";
-            });
+    try {
+      // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
+      // final now = DateTime.now();
+      // if (_lastScanTime != null &&
+      //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
+      //   debugPrint('冷卻中，忽略本次掃描');
+      //   return;
+      // }
+      // _lastScanTime = now;
+
+      // // 在單次掃描模式下，如果已經掃描過，則忽略
+      // if (!_isContinuousScanMode && _hasScanned) {
+      //   debugPrint('單次掃描已完成，忽略新的掃描結果');
+      //   return;
+      // }
+
+      for (final barcode in barcodes.barcodes) {
+        if (barcode.rawValue != null) {
+          // 清理掃描內容：trim() 並移除異常換行字符
+          final scanContent = barcode.rawValue!.trim().replaceAll(RegExp(r'[\r\n\t]'), '');
+          debugPrint('掃描結果: $scanContent');
+
+          // 確保在 setState 前檢查 mounted
+          if (!mounted || _isDisposed) {
+            debugPrint('Widget no longer mounted, aborting scan processing');
+            return;
           }
-        } else if (page_stage == "Machine") {
-          // 当符合 Machine ID 的格式时，才会更新 p_machine_id
-          // 以M開頭+5位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidMachineId(scanContent)) {
-            setState(() {
-              p_machine_id = scanContent;
-              page_stage = "Old_PR";
-            });
-          }
-        } else if (page_stage == "Old_PR") {
-          // 当符合 Old PR ID 的格式时，才会更新 p_old_pr_id
-          // PR開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidPrId(scanContent)) {
-            setState(() {
-              p_old_pr_id = scanContent;
-              page_stage = "Old_Tube";
-            });
-          }
-        } else if (page_stage == "Old_Tube") {
-          // 当符合 Old Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidTubeId(scanContent)) {
-            // 在这个阶段需要在 api 检查 p_old_pr_id 和 p_old_tube_id 是否匹配
-            // 如果匹配失败，弹出对话框提示
-            //_scannerController.stop();
-            setState(() {
-              p_old_tube_id = scanContent;
-              page_stage = "Nozzle";
-            });
-            // 显示 Loading 对话框
-            // showCupertinoDialog(
-            //   context: context,tf
-            //   builder: (context) {
-            //     return CupertinoAlertDialog(title: Row(children: [CupertinoActivityIndicator(), SizedBox(width: 8), const Text('Processing...')]));
-            //   },
-            // );
-          }
-        } else if (page_stage == "Nozzle") {
-          // 当符合 Old Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidNozzleId(scanContent)) {
-            setState(() {
-              p_nozzle_id = scanContent;
-              page_stage = "New_PR";
-            });
-          }
-        } else if (page_stage == "New_PR") {
-          // 当符合 New PR ID 的格式时，才会更新 p_old_pr_id
-          // PR開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidPrId(scanContent)) {
-            if (p_old_pr_id.trim().isNotEmpty && p_old_pr_id.trim() != scanContent.trim()) {
-              // 如果新PR ID和旧PR ID不同，才允许更新
-              setState(() {
-                p_new_pr_id = scanContent;
-                page_stage = "New_Tube";
-              });
+
+          if (page_stage == "User") {
+            // 当符合 员工ID 的格式时，才会更新 p_user_id
+            // scanContent 必須是6位數字，
+            if (PrmsDataCheck.isValidUserId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_user_id = scanContent;
+                  page_stage = "Machine";
+                });
+              }
+            }
+          } else if (page_stage == "Machine") {
+            // 当符合 Machine ID 的格式时，才会更新 p_machine_id
+            // 以M開頭+5位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidMachineId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_machine_id = scanContent;
+                  page_stage = "Old_PR";
+                });
+              }
+            }
+          } else if (page_stage == "Old_PR") {
+            // 当符合 Old PR ID 的格式时，才会更新 p_old_pr_id
+            // PR開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidPrId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_old_pr_id = scanContent;
+                  page_stage = "Old_Tube";
+                });
+              }
+            }
+          } else if (page_stage == "Old_Tube") {
+            // 当符合 Old Tube ID 的格式时，才会更新 p_old_pr_id
+            // TUBE開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidTubeId(scanContent)) {
+              // 在这个阶段需要在 api 检查 p_old_pr_id 和 p_old_tube_id 是否匹配
+              // 如果匹配失败，弹出对话框提示
+              //_scannerController.stop();
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_old_tube_id = scanContent;
+                  page_stage = "Nozzle";
+                });
+              }
+              // 显示 Loading 对话框
+              // showCupertinoDialog(
+              //   context: context,tf
+              //   builder: (context) {
+              //     return CupertinoAlertDialog(title: Row(children: [CupertinoActivityIndicator(), SizedBox(width: 8), const Text('Processing...')]));
+              //   },
+              // );
+            }
+          } else if (page_stage == "Nozzle") {
+            // 当符合 Old Tube ID 的格式时，才会更新 p_old_pr_id
+            // TUBE開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidNozzleId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_nozzle_id = scanContent;
+                  page_stage = "New_PR";
+                });
+              }
+            }
+          } else if (page_stage == "New_PR") {
+            // 当符合 New PR ID 的格式时，才会更新 p_old_pr_id
+            // PR開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidPrId(scanContent)) {
+              if (p_old_pr_id.trim().isNotEmpty && p_old_pr_id.trim() != scanContent.trim()) {
+                // 如果新PR ID和旧PR ID不同，才允许更新
+                if (mounted && !_isDisposed) {
+                  setState(() {
+                    p_new_pr_id = scanContent;
+                    page_stage = "New_Tube";
+                  });
+                }
+              }
+            }
+          } else if (page_stage == "New_Tube") {
+            // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
+            // TUBE開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidTubeId(scanContent)) {
+              if (p_old_tube_id.trim().isNotEmpty && p_old_tube_id.trim() == scanContent.trim()) {
+                // PR ID 和 Tube ID 必须匹配 ， 这是动作检查点
+                if (mounted && !_isDisposed) {
+                  setState(() {
+                    p_new_tube_id = scanContent;
+                    page_stage = "Complete";
+                  });
+                }
+              }
             }
           }
-        } else if (page_stage == "New_Tube") {
-          // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidTubeId(scanContent)) {
-            if (p_old_tube_id.trim().isNotEmpty && p_old_tube_id.trim() == scanContent.trim()) {
-              // PR ID 和 Tube ID 必须匹配 ， 这是动作检查点
-              setState(() {
-                p_new_tube_id = scanContent;
-                page_stage = "Complete";
-              });
-            }
-          }
+
+          // 處理完一個有效條碼後就退出
+          break;
         }
-
-        // 在這裡可以根據需要處理掃描結果，例如顯示對話框或更新畫面
-        // showDialog(
-        //   context: context,
-        //   builder: (context) => CupertinoAlertDialog(
-        //     title: const Text('掃描結果'),
-        //     content: Text(scanContent),
-        //     actions: [
-        //       CupertinoDialogAction(
-        //         child: const Text('確定'),
-        //         onPressed: () => Navigator.of(context).pop(),
-        //       ),
-        //     ],
-        //   ),
-        // );
       }
+    } finally {
+      // 延遲重置處理標記，避免太快接受下一次掃描
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_isDisposed) {
+          _isProcessing = false;
+        }
+      });
     }
   }
 
@@ -246,7 +283,7 @@ class _PageFun1State extends State<PageCunsume> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     icon: CupertinoIcons.person,
                                     label: 'User',
@@ -258,7 +295,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     },
                                     height: 56,
                                   ),
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -280,7 +317,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     },
                                     height: 56,
                                   ),
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -304,7 +341,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     },
                                     height: 56,
                                   ),
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -328,7 +365,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     },
                                     height: 56,
                                   ),
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -353,7 +390,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     height: 56,
                                   ),
 
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -378,7 +415,7 @@ class _PageFun1State extends State<PageCunsume> {
                                     height: 56,
                                   ),
 
-                                  _buildStageButton(
+                                  buildStageButton(
                                     context,
                                     iconWidget: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -540,25 +577,25 @@ class _PageFun1State extends State<PageCunsume> {
                                       ),
                                       child: Column(
                                         children: [
-                                          _buildInfoRowStyled('User Id', p_user_id, CupertinoIcons.person),
-                                          _buildDivider(),
-                                          _buildInfoRowStyled(
+                                          buildInfoRowStyled('User Id', p_user_id, CupertinoIcons.person),
+                                          buildDivider(),
+                                          buildInfoRowStyled(
                                             'Machine Id',
                                             p_machine_id,
                                             Icons.circle, // 传任意合法IconData避免类型错误
                                             iconWidget: Image.asset('assets/machine.png', width: 24, height: 24, color: CupertinoColors.activeBlue),
                                           ),
-                                          _buildDivider(),
-                                          _buildInfoRowStyled('Old PR Id', p_old_pr_id, Icons.science, color: Color(0xFFB8860B)),
+                                          buildDivider(),
+                                          buildInfoRowStyled('Old PR Id', p_old_pr_id, Icons.science, color: Color(0xFFB8860B)),
 
-                                          _buildDivider(),
-                                          _buildInfoRowStyled('Tube Id(1)', p_old_tube_id, CupertinoIcons.tag, color: Color(0xFFB8860B)),
-                                          _buildDivider(),
-                                          _buildInfoRowStyled('Nozzle Id', p_nozzle_id, CupertinoIcons.arrow_uturn_down, color: Color.fromARGB(255, 6, 6, 6)),
-                                          _buildDivider(),
-                                          _buildInfoRowStyled('New PR Id', p_new_pr_id, Icons.science, color: Color(0xFF1E90FF)),
-                                          _buildDivider(),
-                                          _buildInfoRowStyled('Tube Id(2)', p_new_tube_id, CupertinoIcons.tag, color: Color(0xFF1E90FF)),
+                                          buildDivider(),
+                                          buildInfoRowStyled('Tube Id(1)', p_old_tube_id, CupertinoIcons.tag, color: Color(0xFFB8860B)),
+                                          buildDivider(),
+                                          buildInfoRowStyled('Nozzle Id', p_nozzle_id, CupertinoIcons.arrow_uturn_down, color: Color.fromARGB(255, 6, 6, 6)),
+                                          buildDivider(),
+                                          buildInfoRowStyled('New PR Id', p_new_pr_id, Icons.science, color: Color(0xFF1E90FF)),
+                                          buildDivider(),
+                                          buildInfoRowStyled('Tube Id(2)', p_new_tube_id, CupertinoIcons.tag, color: Color(0xFF1E90FF)),
                                         ],
                                       ),
                                     ),
@@ -766,17 +803,21 @@ class _PageFun1State extends State<PageCunsume> {
                               : VisibilityDetector(
                                 key: _scannerVisibilityKey,
                                 onVisibilityChanged: (visibilityInfo) {
-                                  if (!mounted) return;
+                                  if (!mounted || _isDisposed) return; // 新增檢查
+
                                   final visibleFraction = visibilityInfo.visibleFraction;
-                                  debugPrint('Scanner visibility: \\${visibleFraction * 100}%');
+                                  debugPrint('Scanner visibility: ${visibleFraction * 100}%');
+
                                   if (visibleFraction > 0) {
                                     debugPrint('Scanner is visible, starting camera...');
                                     _scannerController.start().catchError((error) {
-                                      debugPrint('Error starting camera: \\$error');
+                                      debugPrint('Error starting camera: $error');
                                     });
                                   } else {
                                     debugPrint('Scanner is not visible, stopping camera...');
-                                    _scannerController.stop();
+                                    _scannerController.stop().catchError((error) {
+                                      debugPrint('Error stopping camera: $error');
+                                    });
                                   }
                                 },
                                 child: Center(
@@ -785,20 +826,20 @@ class _PageFun1State extends State<PageCunsume> {
                                     height: deviceSize.height * 0.36,
                                     decoration: BoxDecoration(
                                       color: CupertinoColors.systemGrey6.withOpacity(0.85),
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(12),
                                       boxShadow: [BoxShadow(color: CupertinoColors.systemGrey4.withOpacity(0.18), blurRadius: 16, offset: Offset(0, 4))],
                                     ),
                                     child: Stack(
                                       children: [
                                         ClipRRect(
-                                          borderRadius: BorderRadius.circular(18),
+                                          borderRadius: BorderRadius.circular(12),
                                           child: MobileScanner(controller: _scannerController, fit: BoxFit.cover, onDetect: _handleScan),
                                         ),
                                         // 四角高亮
-                                        Positioned(top: 0, left: 0, child: _buildCornerDecoration(alignment: Alignment.topLeft)),
-                                        Positioned(top: 0, right: 0, child: _buildCornerDecoration(alignment: Alignment.topRight)),
-                                        Positioned(bottom: 0, left: 0, child: _buildCornerDecoration(alignment: Alignment.bottomLeft)),
-                                        Positioned(bottom: 0, right: 0, child: _buildCornerDecoration(alignment: Alignment.bottomRight)),
+                                        Positioned(top: 0, left: 0, child: buildCornerDecoration(alignment: Alignment.topLeft)),
+                                        Positioned(top: 0, right: 0, child: buildCornerDecoration(alignment: Alignment.topRight)),
+                                        Positioned(bottom: 0, left: 0, child: buildCornerDecoration(alignment: Alignment.bottomLeft)),
+                                        Positioned(bottom: 0, right: 0, child: buildCornerDecoration(alignment: Alignment.bottomRight)),
                                         // 闪光灯按钮
                                         Positioned(
                                           top: 16.0,
@@ -825,7 +866,7 @@ class _PageFun1State extends State<PageCunsume> {
                     hasScrollBody: false,
                     child: Align(
                       alignment: Alignment.bottomCenter,
-                      child: Padding(padding: EdgeInsets.only(bottom: 16.0, left: screenWidth * 0.1, right: screenWidth * 0.1), child: _buildBottomInfo()),
+                      child: Padding(padding: EdgeInsets.only(bottom: 16.0, left: screenWidth * 0.1, right: screenWidth * 0.1), child: buildBottomInfo()),
                     ),
                   ),
                 ],
@@ -839,17 +880,29 @@ class _PageFun1State extends State<PageCunsume> {
 
   @override
   void dispose() {
+    _isDisposed = true; // 標記為已釋放
+
     try {
+      // 確保相機完全停止
       _scannerController.stop();
     } catch (e) {
       debugPrint('Error stopping camera: $e');
     }
-    _scannerController.dispose();
+
+    // 延遲釋放，確保所有異步操作完成
+    Future.delayed(const Duration(milliseconds: 100), () {
+      try {
+        _scannerController.dispose();
+      } catch (e) {
+        debugPrint('Error disposing scanner: $e');
+      }
+    });
+
     super.dispose();
   }
 
   // 新增iOS风格按钮构建方法
-  Widget _buildStageButton(
+  Widget buildStageButton(
     BuildContext context, {
     IconData? icon,
     Widget? iconWidget,
@@ -891,7 +944,7 @@ class _PageFun1State extends State<PageCunsume> {
   }
 
   // 專業iOS表單行（帶圖標與顏色）
-  Widget _buildInfoRowStyled(
+  Widget buildInfoRowStyled(
     String label,
     String value,
     IconData? icon, {
@@ -923,12 +976,12 @@ class _PageFun1State extends State<PageCunsume> {
   }
 
   // 專業iOS分隔線
-  Widget _buildDivider() {
+  Widget buildDivider() {
     return Container(margin: EdgeInsets.symmetric(horizontal: 12), height: 1, color: CupertinoColors.systemGrey5);
   }
 
   // 优化底部信息显示，减少重复判断
-  Widget _buildBottomInfo() {
+  Widget buildBottomInfo() {
     String info = '';
     if (page_stage == "User" && p_user_id.isNotEmpty) {
       info = 'User Id : $p_user_id';
@@ -960,7 +1013,7 @@ class _PageFun1State extends State<PageCunsume> {
   }
 
   // 四角高亮装饰方法
-  Widget _buildCornerDecoration({required Alignment alignment}) {
+  Widget buildCornerDecoration({required Alignment alignment}) {
     return Align(
       alignment: alignment,
       child: Container(

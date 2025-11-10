@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:prmsapp/config/api_config.dart';
+
 class PrmsApi {
   static Future<Map<String, dynamic>?> getAppVersion() async {
-    final url = Uri.parse('https://10.92.144.29/app_version/api/version/getVersion');
+    final url = Uri.parse(ApiConfig.appVersionUrl);
+
     try {
       // 模拟网络慢的现象，延迟3秒
       //await Future.delayed(Duration(seconds: 3));
@@ -15,7 +18,7 @@ class PrmsApi {
       final httpClient = HttpClient();
       httpClient.badCertificateCallback = (X509Certificate cert, String host, int port) {
         // 对于内网IP地址，允许自签名证书
-        return host == '10.92.144.29';
+        return host == Uri.parse(ApiConfig.baseProxyUrl).host;
       };
 
       final request = await httpClient.postUrl(url);

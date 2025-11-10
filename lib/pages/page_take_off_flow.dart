@@ -43,6 +43,8 @@ class _PageTakeOffFlowState extends State<PageTakeOffFlow> {
 
   bool _isButtonPressed = false;
   bool _isSubmitting = false; // 新增提交状态变量
+  bool _isDisposed = false; // 追蹤 Widget 是否已釋放
+  bool _isProcessing = false; // 防止重複處理掃描
 
   final Key _scannerVisibilityKey = UniqueKey();
 
@@ -72,87 +74,120 @@ class _PageTakeOffFlowState extends State<PageTakeOffFlow> {
 
   /// 處理掃描結果，支援單次與連續模式，並彈出對話框或更新畫面
   void _handleScan(BarcodeCapture barcodes) {
-    // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
-    // final now = DateTime.now();
-    // if (_lastScanTime != null &&
-    //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
-    //   debugPrint('冷卻中，忽略本次掃描');
-    //   return;
-    // }
-    // _lastScanTime = now;
+    // 檢查 Widget 狀態
+    if (_isDisposed || !mounted) return;
 
-    // // 在單次掃描模式下，如果已經掃描過，則忽略
-    // if (!_isContinuousScanMode && _hasScanned) {
-    //   debugPrint('單次掃描已完成，忽略新的掃描結果');
-    //   return;
-    // }
+    // 防止重複處理
+    if (_isProcessing) return;
 
-    for (final barcode in barcodes.barcodes) {
-      if (barcode.rawValue != null) {
-        final scanContent = barcode.rawValue!;
-        debugPrint('掃描結果: $scanContent');
-        if (page_stage == "User") {
-          // 当符合 员工ID 的格式时，才会更新 p_user_id
-          // scanContent 必須是6位數字，
-          if (PrmsDataCheck.isValidUserId(scanContent)) {
-            setState(() {
-              p_user_id = scanContent;
-              page_stage = "Machine";
-            });
+    _isProcessing = true;
+
+    try {
+      // 加入冷卻時間判斷，避免因為相機畫面殘影、手抖、或多條碼同時入鏡時，短時間內重複觸發掃描
+      // final now = DateTime.now();
+      // if (_lastScanTime != null &&
+      //     now.difference(_lastScanTime!).inMilliseconds < 1000) {
+      //   debugPrint('冷卻中，忽略本次掃描');
+      //   return;
+      // }
+      // _lastScanTime = now;
+
+      // // 在單次掃描模式下，如果已經掃描過，則忽略
+      // if (!_isContinuousScanMode && _hasScanned) {
+      //   debugPrint('單次掃描已完成，忽略新的掃描結果');
+      //   return;
+      // }
+
+      for (final barcode in barcodes.barcodes) {
+        if (barcode.rawValue != null) {
+          // 清理掃描內容，移除換行符號和特殊字元
+          final scanContent = barcode.rawValue!.trim().replaceAll(RegExp(r'[\r\n\t]'), '');
+          debugPrint('掃描結果: $scanContent');
+          if (page_stage == "User") {
+            // 当符合 员工ID 的格式时，才会更新 p_user_id
+            // scanContent 必須是6位數字，
+            if (PrmsDataCheck.isValidUserId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_user_id = scanContent;
+                  page_stage = "Machine";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "Machine") {
+            // 当符合 Machine ID 的格式时，才会更新 p_machine_id
+            // 以M開頭+5位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidMachineId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_machine_id = scanContent;
+                  page_stage = "New_PR";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "New_PR") {
+            // 当符合 New PR ID 的格式时，才会更新 p_old_pr_id
+            // PR開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidPrId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_new_pr_id = scanContent;
+                  page_stage = "New_Tube";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "New_Tube") {
+            // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
+            // TUBE開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidTubeId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_new_tube_id = scanContent;
+                  page_stage = "Nozzle";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "Nozzle") {
+            // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
+            // TUBE開頭+6位數字，可依實際需求調整
+            if (PrmsDataCheck.isValidNozzleId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_nozzle_id = scanContent;
+                  page_stage = "Complete";
+                });
+              }
+              break;
+            }
           }
-        } else if (page_stage == "Machine") {
-          // 当符合 Machine ID 的格式时，才会更新 p_machine_id
-          // 以M開頭+5位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidMachineId(scanContent)) {
-            setState(() {
-              p_machine_id = scanContent;
-              page_stage = "New_PR";
-            });
-          }
-        } else if (page_stage == "New_PR") {
-          // 当符合 New PR ID 的格式时，才会更新 p_old_pr_id
-          // PR開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidPrId(scanContent)) {
-            setState(() {
-              p_new_pr_id = scanContent;
-              page_stage = "New_Tube";
-            });
-          }
-        } else if (page_stage == "New_Tube") {
-          // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidTubeId(scanContent)) {
-            setState(() {
-              p_new_tube_id = scanContent;
-              page_stage = "Nozzle";
-            });
-          }
-        } else if (page_stage == "Nozzle") {
-          // 当符合 New Tube ID 的格式时，才会更新 p_old_pr_id
-          // TUBE開頭+6位數字，可依實際需求調整
-          if (PrmsDataCheck.isValidNozzleId(scanContent)) {
-            setState(() {
-              p_nozzle_id = scanContent;
-              page_stage = "Complete";
-            });
-          }
+
+          // 在這裡可以根據需要處理掃描結果，例如顯示對話框或更新畫面
+          // showDialog(
+          //   context: context,
+          //   builder: (context) => CupertinoAlertDialog(
+          //     title: const Text('掃描結果'),
+          //     content: Text(scanContent),
+          //     actions: [
+          //       CupertinoDialogAction(
+          //         child: const Text('確定'),
+          //         onPressed: () => Navigator.of(context).pop(),
+          //       ),
+          //     ],
+          //   ),
+          // );
         }
-
-        // 在這裡可以根據需要處理掃描結果，例如顯示對話框或更新畫面
-        // showDialog(
-        //   context: context,
-        //   builder: (context) => CupertinoAlertDialog(
-        //     title: const Text('掃描結果'),
-        //     content: Text(scanContent),
-        //     actions: [
-        //       CupertinoDialogAction(
-        //         child: const Text('確定'),
-        //         onPressed: () => Navigator.of(context).pop(),
-        //       ),
-        //     ],
-        //   ),
-        // );
       }
+    } finally {
+      // 延遲重置處理標記，實現冷卻機制
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_isDisposed) {
+          _isProcessing = false;
+        }
+      });
     }
   }
 
@@ -401,7 +436,7 @@ class _PageTakeOffFlowState extends State<PageTakeOffFlow> {
                       child: VisibilityDetector(
                         key: _scannerVisibilityKey,
                         onVisibilityChanged: (visibilityInfo) {
-                          if (!mounted) return;
+                          if (!mounted || _isDisposed) return;
                           final visibleFraction = visibilityInfo.visibleFraction;
                           debugPrint('Scanner visibility: \\${visibleFraction * 100}%');
                           if (visibleFraction > 0) {
@@ -411,7 +446,9 @@ class _PageTakeOffFlowState extends State<PageTakeOffFlow> {
                             });
                           } else {
                             debugPrint('Scanner is not visible, stopping camera...');
-                            _scannerController.stop();
+                            _scannerController.stop().catchError((error) {
+                              debugPrint('Error stopping camera: \\$error');
+                            });
                           }
                         },
                         child: Center(
@@ -697,12 +734,20 @@ class _PageTakeOffFlowState extends State<PageTakeOffFlow> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     try {
       _scannerController.stop();
     } catch (e) {
       debugPrint('Error stopping camera: $e');
     }
-    _scannerController.dispose();
+    // 延遲釋放控制器，確保異步操作完成
+    Future.delayed(const Duration(milliseconds: 100), () {
+      try {
+        _scannerController.dispose();
+      } catch (e) {
+        debugPrint('Error disposing scanner: $e');
+      }
+    });
     super.dispose();
   }
 

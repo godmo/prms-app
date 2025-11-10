@@ -1,7 +1,8 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:prmsapp/services/auth_service.dart';
-import 'package:msal_auth/msal_auth.dart';
+// import 'package:msal_auth/msal_auth.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();

@@ -50,6 +50,8 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
   // 按钮动画与提交状态
   bool _isButtonPressed = false;
   bool _isSubmitting = false; // 是否正在提交
+  bool _isDisposed = false; // 追蹤 Widget 是否已釋放
+  bool _isProcessing = false; // 防止重複處理掃描
   final Key _scannerVisibilityKey = UniqueKey(); // 用于VisibilityDetector
 
   @override
@@ -80,53 +82,86 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
   /// 处理扫码结果，自动切换阶段
   /// 支持单次与连续扫码，自动校验格式
   void _handleScan(BarcodeCapture barcodes) {
-    for (final barcode in barcodes.barcodes) {
-      if (barcode.rawValue != null) {
-        final scanContent = barcode.rawValue!;
-        debugPrint('掃描結果: $scanContent');
-        if (page_stage == "User") {
-          // 校验员工ID（6位数字）
-          if (PrmsDataCheck.isValidUserId(scanContent)) {
-            setState(() {
-              p_user_id = scanContent;
-              page_stage = "Machine";
-            });
+    // 檢查 Widget 狀態
+    if (_isDisposed || !mounted) return;
+
+    // 防止重複處理
+    if (_isProcessing) return;
+
+    _isProcessing = true;
+
+    try {
+      for (final barcode in barcodes.barcodes) {
+        if (barcode.rawValue != null) {
+          // 清理掃描內容，移除換行符號和特殊字元
+          final scanContent = barcode.rawValue!.trim().replaceAll(RegExp(r'[\r\n\t]'), '');
+          debugPrint('掃描結果: $scanContent');
+          if (page_stage == "User") {
+            // 校验员工ID（6位数字）
+            if (PrmsDataCheck.isValidUserId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_user_id = scanContent;
+                  page_stage = "Machine";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "Machine") {
+            // 校验机台ID（M开头+5位数字）
+            if (PrmsDataCheck.isValidMachineId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_machine_id = scanContent;
+                  page_stage = "New_PR";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "New_PR") {
+            // 校验新PR ID（PR开头+6位数字）
+            if (PrmsDataCheck.isValidPrId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_new_pr_id = scanContent;
+                  page_stage = "New_Tube";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "New_Tube") {
+            // 校验新Tube ID（TUBE开头+6位数字）
+            if (PrmsDataCheck.isValidTubeId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_new_tube_id = scanContent;
+                  page_stage = "Nozzle";
+                });
+              }
+              break;
+            }
+          } else if (page_stage == "Nozzle") {
+            // 校验Nozzle ID
+            if (PrmsDataCheck.isValidNozzleId(scanContent)) {
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  p_nozzle_id = scanContent;
+                  page_stage = "Complete";
+                });
+              }
+              break;
+            }
           }
-        } else if (page_stage == "Machine") {
-          // 校验机台ID（M开头+5位数字）
-          if (PrmsDataCheck.isValidMachineId(scanContent)) {
-            setState(() {
-              p_machine_id = scanContent;
-              page_stage = "New_PR";
-            });
-          }
-        } else if (page_stage == "New_PR") {
-          // 校验新PR ID（PR开头+6位数字）
-          if (PrmsDataCheck.isValidPrId(scanContent)) {
-            setState(() {
-              p_new_pr_id = scanContent;
-              page_stage = "New_Tube";
-            });
-          }
-        } else if (page_stage == "New_Tube") {
-          // 校验新Tube ID（TUBE开头+6位数字）
-          if (PrmsDataCheck.isValidTubeId(scanContent)) {
-            setState(() {
-              p_new_tube_id = scanContent;
-              page_stage = "Nozzle";
-            });
-          }
-        } else if (page_stage == "Nozzle") {
-          // 校验Nozzle ID
-          if (PrmsDataCheck.isValidNozzleId(scanContent)) {
-            setState(() {
-              p_nozzle_id = scanContent;
-              page_stage = "Complete";
-            });
-          }
+          // 可在此弹窗或处理其它扫码逻辑
         }
-        // 可在此弹窗或处理其它扫码逻辑
       }
+    } finally {
+      // 延遲重置處理標記，實現冷卻機制
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_isDisposed) {
+          _isProcessing = false;
+        }
+      });
     }
   }
 
@@ -375,7 +410,7 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                       child: VisibilityDetector(
                         key: _scannerVisibilityKey,
                         onVisibilityChanged: (visibilityInfo) {
-                          if (!mounted) return;
+                          if (!mounted || _isDisposed) return;
                           final visibleFraction = visibilityInfo.visibleFraction;
                           debugPrint('Scanner visibility: \\${visibleFraction * 100}%');
                           if (visibleFraction > 0) {
@@ -385,7 +420,9 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
                             });
                           } else {
                             debugPrint('Scanner is not visible, stopping camera...');
-                            _scannerController.stop();
+                            _scannerController.stop().catchError((error) {
+                              debugPrint('Error stopping camera: \\$error');
+                            });
                           }
                         },
                         child: Center(
@@ -671,12 +708,20 @@ class _PagePutOnFlowState extends State<PagePutOnFlow> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     try {
       _scannerController.stop();
     } catch (e) {
       debugPrint('Error stopping camera: $e');
     }
-    _scannerController.dispose();
+    // 延遲釋放控制器，確保異步操作完成
+    Future.delayed(const Duration(milliseconds: 100), () {
+      try {
+        _scannerController.dispose();
+      } catch (e) {
+        debugPrint('Error disposing scanner: $e');
+      }
+    });
     super.dispose();
   }
 

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart'; // 引入services套件以設定系統UI樣式
+import 'package:prmsapp/config/api_config.dart';
 import 'package:prmsapp/pages/main_page.dart';
 import 'package:prmsapp/pages/splash_screen.dart';
 import 'package:prmsapp/providers/auth_provider.dart';
@@ -12,6 +13,13 @@ import 'package:provider/provider.dart';
 /// ViScanner應用程序主入口點
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 確保Flutter綁定已初始化
+
+  // 初始化 API 配置
+  try {
+    await ApiConfig.initialize();
+  } catch (e) {
+    print("API Config initialization failed: $e");
+  }
 
   // 初始化配置服務
   try {

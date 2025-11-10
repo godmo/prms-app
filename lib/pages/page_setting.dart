@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
+// import '../widgets/keyboard_wizard_card.dart';
+import 'package:prmsapp/providers/auth_provider.dart';
 import 'package:prmsapp/widgets/user_profile_card.dart';
 import 'package:provider/provider.dart';
-import '../widgets/keyboard_wizard_card.dart';
-import 'package:prmsapp/providers/auth_provider.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+// import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class SettingTab extends StatelessWidget {
   const SettingTab({super.key});
@@ -109,12 +109,7 @@ class _SettingsFormState extends State<SettingsForm> {
                             (ctx) => CupertinoAlertDialog(
                               title: const Text('Logout Successful'),
                               content: const Text('You have been logged out.'),
-                              actions: [
-                                CupertinoDialogAction(
-                                  child: const Text('OK'),
-                                  onPressed: () => Navigator.of(ctx).pop(),
-                                ),
-                              ],
+                              actions: [CupertinoDialogAction(child: const Text('OK'), onPressed: () => Navigator.of(ctx).pop())],
                             ),
                       );
                     },

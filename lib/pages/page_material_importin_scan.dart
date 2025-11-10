@@ -53,6 +53,8 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
 
   // MQTT推送状态
   bool _isPushing = false;
+  bool _isDisposed = false; // 追蹤 Widget 是否已釋放
+  bool _isProcessing = false; // 防止重複處理掃描
 
   final Key _scannerVisibilityKey = UniqueKey();
 
@@ -208,50 +210,74 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
 
   /// 處理掃描結果，支援單次與連續模式，並彈出對話框或更新畫面
   void _handleScan(BarcodeCapture barcodes) {
-    for (final barcode in barcodes.barcodes) {
-      if (barcode.rawValue != null) {
-        final scanContent = barcode.rawValue!.trim();
-        debugPrint('掃描結果: $scanContent');
+    // 檢查 Widget 狀態
+    if (_isDisposed || !mounted) return;
 
-        if (scan_mode == "BarCode") {
-          if (scanContent.isEmpty) {
-            // 空掃描結果不處理
-            return;
-          } else {
-            if (scanContent.startsWith("1")) {
-              _addToBuffer(_code1Buffer, scanContent, 1);
-            } else if (scanContent.startsWith("2")) {
-              _addToBuffer(_code2Buffer, scanContent, 2);
-            } else if (scanContent.startsWith("3")) {
-              _addToBuffer(_code3Buffer, scanContent, 3);
-            }
-          }
-        } else if (scan_mode == "QRCode") {
-          try {
-            qrcode_obj = jsonDecode(scanContent);
-            debugPrint('QR码解析成功: $qrcode_obj');
+    // 防止重複處理
+    if (_isProcessing) return;
 
-            // 根据QR码内容处理相应逻辑
-            if (qrcode_obj != null) {
-              final Map<String, dynamic> data = jsonDecode(scanContent);
-              if (data.containsKey('topic')) {
-                final String newPC = data['topic'].toString();
-                context.read<SelectedPCProvider>().addPC(newPC);
-                debugPrint('[DEBUG] 已將 topic 加入 PC List: $newPC');
-                context.read<SelectedPCProvider>().setSelectedPC(newPC);
-                debugPrint('[DEBUG] 已將 topic 設為當前選擇: $newPC');
-                // 綁定成功後再背景重連 MQTT，不阻塞 UI
-                MqttService().connect();
-                // 切換回條碼掃描模式
-                scan_mode = "BarCode";
+    _isProcessing = true;
+
+    try {
+      for (final barcode in barcodes.barcodes) {
+        if (barcode.rawValue != null) {
+          // 清理掃描內容，移除換行符號和特殊字元
+          final scanContent = barcode.rawValue!.trim().replaceAll(RegExp(r'[\r\n\t]'), '');
+          debugPrint('掃描結果: $scanContent');
+
+          if (scan_mode == "BarCode") {
+            if (scanContent.isEmpty) {
+              // 空掃描結果不處理
+              return;
+            } else {
+              if (scanContent.startsWith("1")) {
+                _addToBuffer(_code1Buffer, scanContent, 1);
+                break;
+              } else if (scanContent.startsWith("2")) {
+                _addToBuffer(_code2Buffer, scanContent, 2);
+                break;
+              } else if (scanContent.startsWith("3")) {
+                _addToBuffer(_code3Buffer, scanContent, 3);
+                break;
               }
             }
-          } catch (e) {
-            debugPrint('QR码解析失败: $e');
-            qrcode_obj = null;
+          } else if (scan_mode == "QRCode") {
+            try {
+              qrcode_obj = jsonDecode(scanContent);
+              debugPrint('QR码解析成功: $qrcode_obj');
+
+              // 根据QR码内容处理相应逻辑
+              if (qrcode_obj != null) {
+                final Map<String, dynamic> data = jsonDecode(scanContent);
+                if (data.containsKey('topic')) {
+                  final String newPC = data['topic'].toString();
+                  if (mounted && !_isDisposed) {
+                    context.read<SelectedPCProvider>().addPC(newPC);
+                    debugPrint('[DEBUG] 已將 topic 加入 PC List: $newPC');
+                    context.read<SelectedPCProvider>().setSelectedPC(newPC);
+                    debugPrint('[DEBUG] 已將 topic 設為當前選擇: $newPC');
+                    // 綁定成功後再背景重連 MQTT，不阻塞 UI
+                    MqttService().connect();
+                    // 切換回條碼掃描模式
+                    scan_mode = "BarCode";
+                  }
+                  break;
+                }
+              }
+            } catch (e) {
+              debugPrint('QR码解析失败: $e');
+              qrcode_obj = null;
+            }
           }
         }
       }
+    } finally {
+      // 延遲重置處理標記，實現冷卻機制
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_isDisposed) {
+          _isProcessing = false;
+        }
+      });
     }
   }
 
@@ -298,7 +324,7 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
                   child: VisibilityDetector(
                     key: _scannerVisibilityKey,
                     onVisibilityChanged: (visibilityInfo) {
-                      if (!mounted) return;
+                      if (!mounted || _isDisposed) return;
                       final visibleFraction = visibilityInfo.visibleFraction;
                       debugPrint('Scanner visibility: \\${visibleFraction * 100}%');
                       if (visibleFraction > 0) {
@@ -308,7 +334,9 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
                         });
                       } else {
                         debugPrint('Scanner is not visible, stopping camera...');
-                        _scannerController.stop();
+                        _scannerController.stop().catchError((error) {
+                          debugPrint('Error stopping camera: \\$error');
+                        });
                       }
                     },
                     child: Center(
@@ -522,6 +550,7 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     // 移除MQTT連接狀態監聽
     MqttService().isConnected.removeListener(_onMqttConnectionChanged);
 
@@ -530,7 +559,14 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
     } catch (e) {
       debugPrint('Error stopping camera: $e');
     }
-    _scannerController.dispose();
+    // 延遲釋放控制器，確保異步操作完成
+    Future.delayed(const Duration(milliseconds: 100), () {
+      try {
+        _scannerController.dispose();
+      } catch (e) {
+        debugPrint('Error disposing scanner: $e');
+      }
+    });
     super.dispose();
   }
 
