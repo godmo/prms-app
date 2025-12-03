@@ -4,7 +4,7 @@
     "host": "10.92.144.29",
     "port": 1883
   },
-  "baseProxyUrl":"https://10.92.144.29:80",
+  "baseProxyUrl":"http://10.92.144.29:80/proxy",
   "baseApiUrl" : "http://10.92.144.25:5098"
 
 }

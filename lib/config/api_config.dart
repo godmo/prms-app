@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 class ApiConfig {
   // 基础配置（從 JSON 載入，帶預設值）
-  static String _baseProxyUrl = 'https://10.92.144.29:80';
+  static String _baseProxyUrl = 'http://10.92.144.29:80/proxy';
   static String _baseApiUrl = 'http://10.92.144.25:5098';
   static bool _isInitialized = false;
 
