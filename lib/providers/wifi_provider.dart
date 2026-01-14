@@ -112,6 +112,8 @@ class WiFiProvider extends ChangeNotifier {
         'VSMC-Guest',
         'VIS-Mobile',
         'VSMC-Mobile',
+        'VSMC-TEMP-MOBILE',
+        'VSMC-TEMP-FABGUEST',
         // 添加更多預設的 WiFi SSID
       ];
       await _saveWifiWhitelist();
