@@ -965,7 +965,7 @@ class _PageFun1State extends State<PageCunsume> {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(color: CupertinoColors.label, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: CupertinoColors.label, fontWeight: FontWeight.bold, fontSize: 14),
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
             ),

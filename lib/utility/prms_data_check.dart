@@ -10,8 +10,14 @@ class PrmsDataCheck {
   }
 
   /// 檢查機台ID（範例：13B-SACT，可依實際需求調整）
+  // static bool isValidMachineId(String input) {
+  //   final reg = RegExp(r'^[A-Z0-9]+-[A-Z]+$');
+  //   return reg.hasMatch(input);
+  // }
+
+  /// 檢查機台ID（規則：A開頭、總長6~8碼、其餘只能大寫英數）
   static bool isValidMachineId(String input) {
-    final reg = RegExp(r'^[A-Z0-9]+-[A-Z]+$');
+    final reg = RegExp(r'^A[A-Z0-9]{5,7}$');
     return reg.hasMatch(input);
   }
 

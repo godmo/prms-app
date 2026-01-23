@@ -765,7 +765,7 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
           Expanded(
             child: Text(
               "$label  :  $value",
-              style: TextStyle(color: CupertinoColors.label, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: CupertinoColors.label, fontWeight: FontWeight.bold, fontSize: 14),
               textAlign: textAlign, // Use the textAlign parameter
               overflow: TextOverflow.ellipsis,
             ),
