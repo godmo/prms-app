@@ -46,6 +46,17 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
   bool _isDisposed = false; // 追蹤 Widget 是否已釋放
   bool _isProcessing = false; // 防止重複處理掃描
 
+  // 掃描緩衝機制 - 用於確保掃描結果的穩定性
+  static const int _scanBufferSize = 3;
+  final List<String> _code1Buffer = [];
+  final List<String> _code2Buffer = [];
+  final List<String> _code3Buffer = [];
+
+  // 三个条码变量
+  String code1 = "";
+  String code2 = "";
+  String code3 = "";
+
   @override
   void initState() {
     super.initState();
@@ -116,16 +127,65 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
           } else if (page_stage == "PR") {
             // 当符合 Machine ID 的格式时，才会更新 p_machine_id
             // 以M開頭+5位數字，可依實際需求調整
-            if (PrmsDataCheck.isValidPrId(scanContent)) {
-              if (mounted && !_isDisposed) {
-                setState(() {
-                  // 如果 p_pr 已经包含了这个 PR ID，则不再添加
-                  if (!p_pr.contains(scanContent)) {
-                    p_pr.add(scanContent);
-                  }
-                });
+            // if (PrmsDataCheck.isValidPrId(scanContent)) {
+            //   if (mounted && !_isDisposed) {
+            //     setState(() {
+            //       // 如果 p_pr 已经包含了这个 PR ID，则不再添加
+            //       if (!p_pr.contains(scanContent)) {
+            //         p_pr.add(scanContent);
+            //       }
+            //     });
+            //   }
+            //   break;
+            // }
+
+            if (code1.isNotEmpty && code2.isNotEmpty && code3.isNotEmpty) {
+              setState(() {
+                var composedPrId = "";
+                if (code1.contains(" ")) {
+                  composedPrId += code1.split(" ")[0].substring(1).trim().replaceAll(" ", "-"); // 去掉开头的 "1"
+                } else if (code1.contains("-")) {
+                  composedPrId += code1.split("-")[0].substring(1).trim(); // 去掉开头的 "1"
+                }
+
+                if (code2.contains(" ")) {
+                  composedPrId += code2.split(" ")[1].trim().substring(0, 8); // 只取前8位
+                } else if (code2.contains("-")) {
+                  composedPrId += code2.split("-")[1].trim().substring(0, 8); // 只取前8位
+                }
+
+                if (!p_pr.contains(composedPrId)) {
+                  p_pr.add(scanContent);
+                }
+                //p_old_pr_id = code1;
+                //page_stage = "Old_Tube";
+                // 重置扫描结果和缓冲区
+                code1 = "";
+                code2 = "";
+                code3 = "";
+                _code1Buffer.clear();
+                _code2Buffer.clear();
+                _code3Buffer.clear();
+
+                //if (PrmsDataCheck.isValidPrId(p_old_pr_id)) {
+                if (mounted && !_isDisposed) {
+                  setState(() {
+                    page_stage = "Rack";
+                  });
+                }
+                //}
+              });
+            } else {
+              if (scanContent.startsWith("1")) {
+                _addToBuffer(_code1Buffer, scanContent, 1);
+                break;
+              } else if (scanContent.startsWith("2")) {
+                _addToBuffer(_code2Buffer, scanContent, 2);
+                break;
+              } else if (scanContent.startsWith("3")) {
+                _addToBuffer(_code3Buffer, scanContent, 3);
+                break;
               }
-              break;
             }
           } else if (page_stage == "Rack") {
             // 当符合 Old PR ID 的格式时，才会更新 p_old_pr_id
@@ -165,6 +225,105 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
         }
       });
     }
+  }
+
+  /// 添加掃描結果到緩衝區，當緩衝區滿且所有值相同時才確認結果
+  void _addToBuffer(List<String> buffer, String scanResult, int codeNumber) {
+    // 添加新的掃描結果到緩衝區
+    buffer.add(scanResult);
+
+    // 如果緩衝區超過設定大小，移除最舊的元素
+    if (buffer.length > _scanBufferSize) {
+      buffer.removeAt(0);
+    }
+
+    // 檢查緩衝區是否已滿且所有值都相同
+    if (buffer.length == _scanBufferSize && _isBufferConsistent(buffer)) {
+      // 確認掃描結果並更新對應的code變數
+      switch (codeNumber) {
+        case 1:
+          if (code1 != scanResult) {
+            code1 = scanResult;
+            setState(() {});
+            debugPrint('Code 1 確認: $scanResult');
+          }
+          break;
+        case 2:
+          if (code2 != scanResult) {
+            code2 = scanResult;
+            setState(() {});
+            debugPrint('Code 2 確認: $scanResult');
+          }
+          break;
+        case 3:
+          if (code3 != scanResult) {
+            code3 = scanResult;
+            setState(() {});
+            debugPrint('Code 3 確認: $scanResult');
+          }
+          break;
+      }
+    }
+  }
+
+  /// 檢查緩衝區中的所有值是否一致
+  bool _isBufferConsistent(List<String> buffer) {
+    if (buffer.isEmpty) return false;
+    String firstValue = buffer.first;
+    return buffer.every((value) => value == firstValue);
+  }
+
+  /// 清除指定的緩衝區
+  void _clearBuffer(int codeNumber) {
+    switch (codeNumber) {
+      case 1:
+        _code1Buffer.clear();
+        break;
+      case 2:
+        _code2Buffer.clear();
+        break;
+      case 3:
+        _code3Buffer.clear();
+        break;
+    }
+  }
+
+  // 构建条码行的辅助方法
+  Widget _buildCodeRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text('$label：', style: const TextStyle(color: CupertinoColors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+        const SizedBox(width: 12),
+        Expanded(child: Text(value, style: const TextStyle(color: CupertinoColors.activeBlue, fontSize: 16, fontWeight: FontWeight.w600))),
+        // 加上 CupertinoIcons ， 如果是 value 是空则显示警告图标 ， 如果是正常的value 则显示 check 图标
+        if (value.isEmpty)
+          Icon(CupertinoIcons.exclamationmark_triangle, color: CupertinoColors.systemRed, size: 20)
+        else
+          Icon(CupertinoIcons.check_mark, color: CupertinoColors.systemGreen, size: 20),
+        // 清除資料圖示
+        CupertinoButton(
+          padding: const EdgeInsets.all(2),
+          minSize: 0,
+          onPressed: () {
+            setState(() {
+              if (label == 'Code 1') {
+                code1 = '';
+                _clearBuffer(1);
+              } else if (label == 'Code 2') {
+                code2 = '';
+                _clearBuffer(2);
+              } else if (label == 'Code 3') {
+                code3 = '';
+                _clearBuffer(3);
+              }
+            });
+          },
+          child: Icon(CupertinoIcons.clear_circled, color: CupertinoColors.systemGrey, size: 18),
+        ),
+      ],
+    );
   }
 
   @override
@@ -658,6 +817,95 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
                                   ),
                                 ),
                               ),
+                          if (page_stage == "PR")
+                            // Professional Header Section
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: CupertinoColors.systemGrey6.withOpacity(0.5),
+                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                                border: Border(bottom: BorderSide(color: CupertinoColors.systemGrey4, width: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(color: CupertinoColors.activeBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                        child: Icon(CupertinoIcons.barcode_viewfinder, color: CupertinoColors.activeBlue, size: 18),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Scan Results',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                              color: CupertinoColors.black,
+                                              letterSpacing: 0.3,
+                                              shadows: [Shadow(color: CupertinoColors.systemGrey3.withOpacity(0.3), offset: Offset(0, 1), blurRadius: 2)],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Barcode List',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: CupertinoColors.systemBlue, letterSpacing: 0.2),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  if (code1.isNotEmpty || code2.isNotEmpty || code3.isNotEmpty)
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: CupertinoColors.systemRed.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: CupertinoColors.systemRed.withOpacity(0.3), width: 1),
+                                      ),
+                                      child: CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        minSize: 0,
+                                        onPressed: () {
+                                          setState(() {
+                                            code1 = '';
+                                            code2 = '';
+                                            code3 = '';
+                                            _clearBuffer(1);
+                                            _clearBuffer(2);
+                                            _clearBuffer(3);
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(CupertinoIcons.clear_fill, color: CupertinoColors.systemRed, size: 16),
+                                            const SizedBox(width: 6),
+                                            Text('Clear All', style: TextStyle(color: CupertinoColors.systemRed, fontSize: 13, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          // Content Section with original code rows
+                          if (page_stage == "PR")
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                children: [
+                                  _buildCodeRow('Code 1', code1),
+                                  const SizedBox(height: 6),
+                                  _buildCodeRow('Code 2', code2),
+                                  const SizedBox(height: 6),
+                                  _buildCodeRow('Code 3', code3),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),
