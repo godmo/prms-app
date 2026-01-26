@@ -178,15 +178,17 @@ class _PageFun1State extends State<PageCunsume> {
                 var composedOldPrId = "";
 
                 if (code1.contains(" ")) {
-                  composedOldPrId += code1.split(" ")[0].substring(1).trim().replaceAll(" ", "-"); // 去掉开头的 "1"
+                  composedOldPrId += "${code1.split(" ")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedOldPrId += code1.split(" ")[1].substring(0, 8).trim(); // 只取前8位
                 } else if (code1.contains("-")) {
-                  composedOldPrId += code1.split("-")[0].substring(1).trim(); // 去掉开头的 "1"
+                  composedOldPrId += "${code1.split("-")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedOldPrId += code1.split("-")[1].substring(0, 8).trim(); // 只取前8位
                 }
 
                 if (code2.contains(" ")) {
-                  composedOldPrId += code2.split(" ")[1].trim().substring(0, 8); // 只取前8位
+                  composedOldPrId += code2.split(" ")[1].trim(); // 只取前8位
                 } else if (code2.contains("-")) {
-                  composedOldPrId += code2.split("-")[1].trim().substring(0, 8); // 只取前8位
+                  composedOldPrId += code2.split("-")[1].trim(); // 只取前8位
                 }
 
                 p_old_pr_id = composedOldPrId;
@@ -271,15 +273,17 @@ class _PageFun1State extends State<PageCunsume> {
               setState(() {
                 var composedNewPrId = "";
                 if (code1.contains(" ")) {
-                  composedNewPrId += code1.split(" ")[0].substring(1).trim().replaceAll(" ", "-"); // 去掉开头的 "1"
+                  composedNewPrId += "${code1.split(" ")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedNewPrId += code1.split(" ")[1].substring(0, 8).trim(); // 只取前8位
                 } else if (code1.contains("-")) {
-                  composedNewPrId += code1.split("-")[0].substring(1).trim(); // 去掉开头的 "1"
+                  composedNewPrId += "${code1.split("-")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedNewPrId += code1.split("-")[1].substring(0, 8).trim(); // 只取前8位
                 }
 
                 if (code2.contains(" ")) {
-                  composedNewPrId += code2.split(" ")[1].trim().substring(0, 8); // 只取前8位
+                  composedNewPrId += code2.split(" ")[1].trim(); // 只取前8位
                 } else if (code2.contains("-")) {
-                  composedNewPrId += code2.split("-")[1].trim().substring(0, 8); // 只取前8位
+                  composedNewPrId += code2.split("-")[1].trim(); // 只取前8位
                 }
                 p_new_pr_id = composedNewPrId;
 

@@ -143,15 +143,17 @@ class _PageMoveOutRackState extends State<PageMoveOutRack> {
               setState(() {
                 var composedPrId = "";
                 if (code1.contains(" ")) {
-                  composedPrId += code1.split(" ")[0].substring(1).trim().replaceAll(" ", "-"); // 去掉开头的 "1"
+                  composedPrId += "${code1.split(" ")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedPrId += code1.split(" ")[1].substring(0, 8).trim(); // 只取前8位
                 } else if (code1.contains("-")) {
-                  composedPrId += code1.split("-")[0].substring(1).trim(); // 去掉开头的 "1"
+                  composedPrId += "${code1.split("-")[0].substring(1).trim()}-"; // 去掉开头的 "1"
+                  composedPrId += code1.split("-")[1].substring(0, 8).trim(); // 只取前8位
                 }
 
                 if (code2.contains(" ")) {
-                  composedPrId += code2.split(" ")[1].trim().substring(0, 8); // 只取前8位
+                  composedPrId += code2.split(" ")[1].trim(); // 只取前8位
                 } else if (code2.contains("-")) {
-                  composedPrId += code2.split("-")[1].trim().substring(0, 8); // 只取前8位
+                  composedPrId += code2.split("-")[1].trim(); // 只取前8位
                 }
 
                 if (!p_pr.contains(composedPrId)) {
