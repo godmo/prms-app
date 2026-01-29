@@ -177,6 +177,16 @@ class _PageFun1State extends State<PageCunsume> {
               setState(() {
                 var composedOldPrId = "";
 
+                while (code1.contains("  ")) {
+                  code1 = code1.replaceAll("  ", " ");
+                }
+                while (code2.contains("  ")) {
+                  code2 = code2.replaceAll("  ", " ");
+                }
+                while (code3.contains("  ")) {
+                  code3 = code3.replaceAll("  ", " ");
+                }
+
                 if (code1.contains(" ")) {
                   composedOldPrId += "${code1.split(" ")[0].substring(1).trim()}-"; // 去掉开头的 "1"
                   composedOldPrId += code1.split(" ")[1].substring(0, 8).trim(); // 只取前8位
@@ -215,7 +225,10 @@ class _PageFun1State extends State<PageCunsume> {
                 _addToBuffer(_code1Buffer, scanContent, 1);
                 break;
               } else if (scanContent.startsWith("2")) {
-                _addToBuffer(_code2Buffer, scanContent, 2);
+                // 扫描结果长度大于10才加入缓冲区（不然会与 员工ID 混淆）
+                if (scanContent.trim().length > 10) {
+                  _addToBuffer(_code2Buffer, scanContent, 2);
+                }
                 break;
               } else if (scanContent.startsWith("3")) {
                 _addToBuffer(_code3Buffer, scanContent, 3);
@@ -272,6 +285,15 @@ class _PageFun1State extends State<PageCunsume> {
             if (code1.isNotEmpty && code2.isNotEmpty && code3.isNotEmpty) {
               setState(() {
                 var composedNewPrId = "";
+                while (code1.contains("  ")) {
+                  code1 = code1.replaceAll("  ", " ");
+                }
+                while (code2.contains("  ")) {
+                  code2 = code2.replaceAll("  ", " ");
+                }
+                while (code3.contains("  ")) {
+                  code3 = code3.replaceAll("  ", " ");
+                }
                 if (code1.contains(" ")) {
                   composedNewPrId += "${code1.split(" ")[0].substring(1).trim()}-"; // 去掉开头的 "1"
                   composedNewPrId += code1.split(" ")[1].substring(0, 8).trim(); // 只取前8位
@@ -308,7 +330,10 @@ class _PageFun1State extends State<PageCunsume> {
                 _addToBuffer(_code1Buffer, scanContent, 1);
                 break;
               } else if (scanContent.startsWith("2")) {
-                _addToBuffer(_code2Buffer, scanContent, 2);
+                // 扫描结果长度大于10才加入缓冲区（不然会与 员工ID 混淆）
+                if (scanContent.trim().length > 10) {
+                  _addToBuffer(_code2Buffer, scanContent, 2);
+                }
                 break;
               } else if (scanContent.startsWith("3")) {
                 _addToBuffer(_code3Buffer, scanContent, 3);

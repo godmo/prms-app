@@ -234,7 +234,10 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
                 _addToBuffer(_code1Buffer, scanContent, 1);
                 break;
               } else if (scanContent.startsWith("2")) {
-                _addToBuffer(_code2Buffer, scanContent, 2);
+                // 扫描结果长度大于10才加入缓冲区（不然会与 员工ID 混淆）
+                if (scanContent.trim().length > 10) {
+                  _addToBuffer(_code2Buffer, scanContent, 2);
+                }
                 break;
               } else if (scanContent.startsWith("3")) {
                 _addToBuffer(_code3Buffer, scanContent, 3);
@@ -754,6 +757,17 @@ class _PaggMaterialImportScanState extends State<PaggMaterialImportScan> {
 
       // 发送数据到MQTT，使用user_id作为topic
       final topic = context.read<SelectedPCProvider>().selectedPC;
+
+      while (code1.contains("  ")) {
+        code1 = code1.replaceAll("  ", " ");
+      }
+      while (code2.contains("  ")) {
+        code2 = code2.replaceAll("  ", " ");
+      }
+      while (code3.contains("  ")) {
+        code3 = code3.replaceAll("  ", " ");
+      }
+
       final message = "$code1\$$code2\$$code3";
       final success = await MqttService().publishAndWaitAck(topic, message);
       if (success) {
