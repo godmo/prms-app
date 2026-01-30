@@ -5,6 +5,7 @@
     "port": 1883
   },
   "baseProxyUrl":"http://10.92.144.29:80/proxy",
-  "baseApiUrl" : "http://10.92.144.25:5098"
+ 
+  "baseApiUrl" : "http://10.199.2.55:5098"
 
 }

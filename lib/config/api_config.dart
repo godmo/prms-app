@@ -5,8 +5,12 @@ import 'package:flutter/services.dart';
 
 class ApiConfig {
   // 基础配置（從 JSON 載入，帶預設值）
-  static String _baseProxyUrl = 'http://10.92.144.29:80/proxy';
-  static String _baseApiUrl = 'http://10.92.144.25:5098';
+  static String _baseProxyUrl = 'http://10.92.144.29:80/proxy'; // 默认代理地址
+  //static String _baseApiUrl = 'http://10.92.144.25:5098';  //默认
+  //static String _baseApiUrl = 'http://10.29.11.237:5098'; //默认 志华
+  static String _baseApiUrl = 'http://10.199.2.55:5098'; // 默认 测试环境
+  // 注意 ： 主要的设定在 app_config.json 中
+
   static bool _isInitialized = false;
 
   /// 從 assets/app_config.json 載入配置
