@@ -15,10 +15,7 @@ import 'package:prmsapp/pages/page_clean_flow.dart'; // 清洁流程页面
 import 'package:prmsapp/pages/page_cumsume.dart'; // 消耗页面
 import 'package:prmsapp/pages/page_material_importin_scan.dart'; // 进货扫描页面
 import 'package:prmsapp/pages/page_move_in_rack.dart'; // 移入机架页面
-import 'package:prmsapp/pages/page_move_out_rack_expired.dart'; // 移出机架页面(Expired)
-//import 'package:prmsapp/pages/page_move_out_rack.dart.bak'; // 移出机架页面
-import 'package:prmsapp/pages/page_move_out_rack_normal.dart'; // 移出机架页面(Normal)
-import 'package:prmsapp/pages/page_move_out_rack_pm.dart'; // 移出机架页面(PM)
+import 'package:prmsapp/pages/page_move_out_rack.dart'; // 移出机架页面
 import 'package:prmsapp/pages/page_put_on_flow.dart'; // 上机流程页面
 import 'package:prmsapp/pages/page_take_off_flow.dart'; // 下机流程页面
 // 全域狀態管理
@@ -215,7 +212,8 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                 _buildCupertinoButton(
                   context,
                   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                  label: ' Move Out Rack（Normal）',
+                  label: ' Move Out Rack',
+                  enabled: true,
                   onPressed: () async {
                     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
@@ -224,46 +222,68 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
 
                     if (isAllowed) {
                       // WiFi 在白名單中，允許導航到消耗頁面
-                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackNormal()));
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRack()));
                     }
                   },
                 ),
-                SizedBox(height: 2), // 按钮间距
-                // 光阻液下防爆柜 - 移出机架功能按钮
-                _buildCupertinoButton(
-                  context,
-                  icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                  label: ' Move Out Rack（PM）',
-                  onPressed: () async {
-                    // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
-                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+                // SizedBox(height: 6), // 按钮间距
+                // // 光阻液下防爆柜 - 移出机架功能按钮
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                //   label: ' Move Out Rack（Normal）',
+                //   enabled: false,
+                //   onPressed: () async {
+                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
-                    if (isAllowed) {
-                      // WiFi 在白名單中，允許導航到消耗頁面
-                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackPm()));
-                    }
-                  },
-                ),
-                SizedBox(height: 2), // 按钮间距
-                // 光阻液下防爆柜 - 移出机架功能按钮
-                _buildCupertinoButton(
-                  context,
-                  icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                  label: ' Move Out Rack（Expired）',
-                  onPressed: () async {
-                    // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
+                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
 
-                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+                //     if (isAllowed) {
+                //       // WiFi 在白名單中，允許導航到消耗頁面
+                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackNormal()));
+                //     }
+                //   },
+                // ),
+                // SizedBox(height: 2), // 按钮间距
+                // // 光阻液下防爆柜 - 移出机架功能按钮
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                //   label: ' Move Out Rack（PM）',
+                //   enabled: false,
+                //   onPressed: () async {
+                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
-                    if (isAllowed) {
-                      // WiFi 在白名單中，允許導航到消耗頁面
-                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackExpired()));
-                    }
-                  },
-                ),
+                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                //     if (isAllowed) {
+                //       // WiFi 在白名單中，允許導航到消耗頁面
+                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackPm()));
+                //     }
+                //   },
+                // ),
+                // SizedBox(height: 2), // 按钮间距
+                // // 光阻液下防爆柜 - 移出机架功能按钮
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                //   label: ' Move Out Rack（Expired）',
+                //   enabled: false,
+                //   onPressed: () async {
+                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
+
+                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                //     if (isAllowed) {
+                //       // WiFi 在白名單中，允許導航到消耗頁面
+                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackExpired()));
+                //     }
+                //   },
+                // ),
                 SizedBox(height: 6), // 按钮间距
                 // 光阻液上机 - 上机流程功能按钮（使用自定义图片图标）
                 _buildCupertinoButtonWithIcons(
@@ -475,23 +495,28 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
-    Color iconColor = CupertinoColors.activeBlue, // 新增：預設 icon 顏色
+    bool enabled = true, // ✅ 新增：由外部控制是否可點擊
+    Color iconColor = CupertinoColors.systemGreen, // ✅ 綠色代表 enable（預設）
   }) {
+    final Color effectiveIconColor = enabled ? iconColor : CupertinoColors.systemGrey;
+    final Color effectiveBorderColor = enabled ? CupertinoColors.systemGrey3 : CupertinoColors.systemGrey4;
+    final Color effectiveTextColor = enabled ? CupertinoColors.black : CupertinoColors.systemGrey;
+
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: CupertinoColors.systemGrey3, width: 0.8), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(border: Border.all(color: effectiveBorderColor, width: 0.8), borderRadius: BorderRadius.circular(4)),
       child: CupertinoButton(
         color: CupertinoColors.white,
+        disabledColor: CupertinoColors.systemGrey6, // ✅ disabled 背景
         borderRadius: BorderRadius.circular(4),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        onPressed: onPressed,
+        onPressed: enabled ? onPressed : null, // ✅ disabled: null
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // 左侧图标
-            Icon(icon, color: iconColor, size: 24), // 改：使用 iconColor
+            Icon(icon, color: effectiveIconColor, size: 24),
             const SizedBox(width: 12),
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.black, letterSpacing: 0.2))),
-            Icon(CupertinoIcons.right_chevron, color: CupertinoColors.systemGrey, size: 22),
+            Expanded(child: Text(label, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: effectiveTextColor, letterSpacing: 0.2))),
+            Icon(CupertinoIcons.right_chevron, color: enabled ? CupertinoColors.systemGrey : CupertinoColors.systemGrey2, size: 22),
           ],
         ),
       ),
@@ -513,33 +538,30 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
     required List<IconData> icons,
     required String label,
     required VoidCallback onPressed,
-    Widget? imageWidget, // 新增可选的imageWidget参数
+    Widget? imageWidget,
+    bool enabled = true, // ✅ 建議同步新增，避免另一種按鈕無法 disable
+    Color enabledAccentColor = CupertinoColors.systemGreen, // ✅ 綠色代表 enable
   }) {
+    final Color effectiveAccent = enabled ? enabledAccentColor : CupertinoColors.systemGrey;
+    final Color effectiveBorderColor = enabled ? CupertinoColors.systemGrey3 : CupertinoColors.systemGrey4;
+    final Color effectiveTextColor = enabled ? CupertinoColors.black : CupertinoColors.systemGrey;
+
     return Container(
-      // 设置按钮边框：浅灰色细边框，圆角4像素
-      decoration: BoxDecoration(border: Border.all(color: CupertinoColors.systemGrey3, width: 0.8), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(border: Border.all(color: effectiveBorderColor, width: 0.8), borderRadius: BorderRadius.circular(4)),
       child: CupertinoButton(
-        color: CupertinoColors.white, // 按钮背景色为白色
-        borderRadius: BorderRadius.circular(4), // 按钮圆角4像素
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), // 按钮内边距
-        onPressed: onPressed, // 点击回调
+        color: CupertinoColors.white,
+        disabledColor: CupertinoColors.systemGrey6,
+        borderRadius: BorderRadius.circular(4),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        onPressed: enabled ? onPressed : null,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.start, // 子组件从左开始排列
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // 如果提供了自定义图片组件则优先显示
             if (imageWidget != null) imageWidget,
-            // 显示系统图标列表（如果有的话）
-            Row(
-              children:
-                  icons
-                      .map((icon) => Padding(padding: const EdgeInsets.only(right: 6), child: Icon(icon, color: CupertinoColors.activeBlue, size: 22)))
-                      .toList(),
-            ),
-            const SizedBox(width: 8), // 图标与文字间距
-            // 中间文本标签，使用Expanded占据剩余空间
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.black, letterSpacing: 0.2))),
-            // 右侧箭头图标，表示可点击跳转
-            Icon(CupertinoIcons.right_chevron, color: CupertinoColors.systemGrey, size: 22),
+            Row(children: icons.map((icon) => Padding(padding: const EdgeInsets.only(right: 6), child: Icon(icon, color: effectiveAccent, size: 22))).toList()),
+            const SizedBox(width: 8),
+            Expanded(child: Text(label, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: effectiveTextColor, letterSpacing: 0.2))),
+            Icon(CupertinoIcons.right_chevron, color: enabled ? CupertinoColors.systemGrey : CupertinoColors.systemGrey2, size: 22),
           ],
         ),
       ),

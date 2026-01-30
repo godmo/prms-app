@@ -1058,55 +1058,53 @@ class _PageMoveOutRackExpiredState extends State<PageMoveOutRackExpired> {
       }
       return SizedBox(
         height: height, // Fixed height, not dependent on p_pr size
-        child: Container(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Text(
-                  'Scanned PR  (${p_pr.length})',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: CupertinoColors.black, decoration: TextDecoration.underline),
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: Text(
+                'Scanned PR  (${p_pr.length})',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: CupertinoColors.black, decoration: TextDecoration.underline),
               ),
+            ),
 
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: p_pr.length,
-                itemBuilder: (context, idx) {
-                  return Dismissible(
-                    key: ValueKey(p_pr[idx]),
-                    direction: DismissDirection.endToStart,
-                    onDismissed: (direction) {
-                      setState(() {
-                        p_pr.removeAt(idx);
-                      });
-                    },
-                    background: Container(
-                      color: CupertinoColors.destructiveRed,
-                      alignment: Alignment.centerRight,
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Icon(Icons.delete, color: CupertinoColors.white),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildInfoRowStyled(
-                          'No'
-                          ' ${idx + 1}',
-                          p_pr[idx],
-                          null,
-                          color: CupertinoColors.activeBlue,
-                          textAlign: TextAlign.left, // Align text to the left
-                        ),
-                        if (idx != p_pr.length - 1) _buildDivider(),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: p_pr.length,
+              itemBuilder: (context, idx) {
+                return Dismissible(
+                  key: ValueKey(p_pr[idx]),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (direction) {
+                    setState(() {
+                      p_pr.removeAt(idx);
+                    });
+                  },
+                  background: Container(
+                    color: CupertinoColors.destructiveRed,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Icon(Icons.delete, color: CupertinoColors.white),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRowStyled(
+                        'No'
+                        ' ${idx + 1}',
+                        p_pr[idx],
+                        null,
+                        color: CupertinoColors.activeBlue,
+                        textAlign: TextAlign.left, // Align text to the left
+                      ),
+                      if (idx != p_pr.length - 1) _buildDivider(),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       );
     }
