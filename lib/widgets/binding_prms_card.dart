@@ -15,7 +15,9 @@ import 'package:prmsapp/pages/page_clean_flow.dart'; // 清洁流程页面
 import 'package:prmsapp/pages/page_cumsume.dart'; // 消耗页面
 import 'package:prmsapp/pages/page_material_importin_scan.dart'; // 进货扫描页面
 import 'package:prmsapp/pages/page_move_in_rack.dart'; // 移入机架页面
-import 'package:prmsapp/pages/page_move_out_rack.dart'; // 移出机架页面
+import 'package:prmsapp/pages/page_move_out_rack_expired.dart'; // 移出机架页面（Expired）
+import 'package:prmsapp/pages/page_move_out_rack_normal.dart'; // 移出机架页面（Normal）
+import 'package:prmsapp/pages/page_move_out_rack_pm.dart'; // 移出机架页面（PM）
 import 'package:prmsapp/pages/page_put_on_flow.dart'; // 上机流程页面
 import 'package:prmsapp/pages/page_take_off_flow.dart'; // 下机流程页面
 // 全域狀態管理
@@ -207,12 +209,32 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
                     }
                   },
                 ),
+
+                // SizedBox(height: 6), // 按钮间距
+                // // 光阻液下防爆柜 - 移出机架功能按钮
+                // _buildCupertinoButton(
+                //   context,
+                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                //   label: ' Move Out Rack',
+                //   enabled: true,
+                //   onPressed: () async {
+                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
+
+                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+
+                //     if (isAllowed) {
+                //       // WiFi 在白名單中，允許導航到消耗頁面
+                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRack()));
+                //     }
+                //   },
+                // ),
                 SizedBox(height: 6), // 按钮间距
                 // 光阻液下防爆柜 - 移出机架功能按钮
                 _buildCupertinoButton(
                   context,
                   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                  label: ' Move Out Rack',
+                  label: ' Move Out Rack（Normal）',
                   enabled: true,
                   onPressed: () async {
                     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
@@ -222,68 +244,48 @@ class _BindingPCCardState extends State<BindingPrmsCard> with WidgetsBindingObse
 
                     if (isAllowed) {
                       // WiFi 在白名單中，允許導航到消耗頁面
-                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRack()));
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackNormal()));
                     }
                   },
                 ),
+                SizedBox(height: 2), // 按钮间距
+                // 光阻液下防爆柜 - 移出机架功能按钮
+                _buildCupertinoButton(
+                  context,
+                  icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                  label: ' Move Out Rack（PM）',
+                  enabled: true,
+                  onPressed: () async {
+                    // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
-                // SizedBox(height: 6), // 按钮间距
-                // // 光阻液下防爆柜 - 移出机架功能按钮
-                // _buildCupertinoButton(
-                //   context,
-                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                //   label: ' Move Out Rack（Normal）',
-                //   enabled: false,
-                //   onPressed: () async {
-                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
 
-                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackPm()));
+                    }
+                  },
+                ),
+                SizedBox(height: 2), // 按钮间距
+                // 光阻液下防爆柜 - 移出机架功能按钮
+                _buildCupertinoButton(
+                  context,
+                  icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
+                  label: ' Move Out Rack（Expired）',
+                  enabled: true,
+                  onPressed: () async {
+                    // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
 
-                //     if (isAllowed) {
-                //       // WiFi 在白名單中，允許導航到消耗頁面
-                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackNormal()));
-                //     }
-                //   },
-                // ),
-                // SizedBox(height: 2), // 按钮间距
-                // // 光阻液下防爆柜 - 移出机架功能按钮
-                // _buildCupertinoButton(
-                //   context,
-                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                //   label: ' Move Out Rack（PM）',
-                //   enabled: false,
-                //   onPressed: () async {
-                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
+                    final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
+                    final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
 
-                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
-
-                //     if (isAllowed) {
-                //       // WiFi 在白名單中，允許導航到消耗頁面
-                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackPm()));
-                //     }
-                //   },
-                // ),
-                // SizedBox(height: 2), // 按钮间距
-                // // 光阻液下防爆柜 - 移出机架功能按钮
-                // _buildCupertinoButton(
-                //   context,
-                //   icon: CupertinoIcons.tray_arrow_up, // 更贴合"从柜子取出"功能的图标
-                //   label: ' Move Out Rack（Expired）',
-                //   enabled: false,
-                //   onPressed: () async {
-                //     // 跳转到移出机架页面，处理从防爆柜取出光阻液的流程
-
-                //     final wifiProvider = Provider.of<WiFiProvider>(context, listen: false);
-                //     final isAllowed = await wifiProvider.isWiFiWithWhitelist(context);
-
-                //     if (isAllowed) {
-                //       // WiFi 在白名單中，允許導航到消耗頁面
-                //       Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackExpired()));
-                //     }
-                //   },
-                // ),
+                    if (isAllowed) {
+                      // WiFi 在白名單中，允許導航到消耗頁面
+                      Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const PageMoveOutRackExpired()));
+                    }
+                  },
+                ),
                 SizedBox(height: 6), // 按钮间距
                 // 光阻液上机 - 上机流程功能按钮（使用自定义图片图标）
                 _buildCupertinoButtonWithIcons(
