@@ -27,9 +27,12 @@ class PrmsDataCheck {
     return reg.hasMatch(input);
   }
 
-  /// 檢查Tube ID（範例：L207350.2，L開頭+6位數字+小數點+1位數字）
+  /// 檢查 Tube ID
+  /// 支援格式：
+  /// 1. L207350.2  （範例：L207350.2，L開頭+6位數字+小數點+1位數字）
+  /// 2. LL235220B.0
   static bool isValidTubeId(String input) {
-    final reg = RegExp(r'^L\d{6}\.\d$');
+    final reg = RegExp(r'^(?:L\d{6}|LL\d{6}B)\.\d$');
     return reg.hasMatch(input);
   }
 
