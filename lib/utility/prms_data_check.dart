@@ -29,11 +29,13 @@ class PrmsDataCheck {
 
   /// 檢查 Tube ID
   /// 支援格式：
-  /// 1. L207350.2  （範例：L207350.2，L開頭+6位數字+小數點+1位數字）
-  /// 2. LL235220B.0
+  /// 1. L207350.2   => L + 6位數字 + . + 1位數字
+  /// 2. L235220B.0  => L + 6位數字 + 1位英文/數字 + . + 1位數字
   static bool isValidTubeId(String input) {
-    final reg = RegExp(r'^(?:L\d{6}|LL\d{6}B)\.\d$');
-    return reg.hasMatch(input);
+    final normalReg = RegExp(r'^L\d{6}\.\d$');
+    final extendedReg = RegExp(r'^L\d{6}[A-Za-z0-9]\.\d$');
+
+    return normalReg.hasMatch(input) || extendedReg.hasMatch(input);
   }
 
   /// 檢查Nozzle ID（範例：1_2，數字+底線+數字）

@@ -1,7 +1,7 @@
 name: prmsapp
 description: "PRMS APP."
 publish_to: 'none' 
-version: 1.0.17+1
+version: 1.0.18+1
 
 environment:
   sdk: '^3.7.2'
